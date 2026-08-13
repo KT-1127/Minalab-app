@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>サンプルアプリ — みんなのアプリラボ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans JP', sans-serif; background: #f0f4ff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+
+        .phone-wrap { width: 100%; max-width: 420px; min-height: 100vh; background: #fff; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(79,110,247,0.12); }
+        .app-status { display: none; }
+        .app-canvas { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+        .loading { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #94a3b8; font-size: 14px; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #e8edf8; border-top-color: #4f6ef7; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-box { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #ef4444; font-size: 13px; text-align: center; padding: 24px; }
+
+        .user-login { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 20px; }
+        .user-login-icon { width: 64px; height: 64px; background: linear-gradient(135deg,#4f6ef7,#7c3aed); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; }
+        .user-login-title { font-size: 18px; font-weight: 700; color: #1e293b; text-align: center; }
+        .user-login-sub { font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.7; }
+        .user-login-input { width: 100%; background: #f8faff; border: 2px solid #d1d9f0; border-radius: 12px; padding: 14px 16px; font-size: 16px; color: #1e293b; outline: none; font-family: inherit; text-align: center; }
+        .user-login-input:focus { border-color: #4f6ef7; }
+        .user-login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg,#4f6ef7,#7c3aed); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .user-login-err { font-size: 12px; color: #ef4444; display: none; }
+        .user-login-err.show { display: block; }
+
+        .user-bar { background: #f0f4ff; border-bottom: 1px solid #d1d9f0; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .user-bar-name { font-size: 12px; font-weight: 700; color: #4f6ef7; display: flex; align-items: center; gap: 6px; }
+        .user-bar-logout { font-size: 11px; color: #94a3b8; background: none; border: none; cursor: pointer; font-family: inherit; text-decoration: underline; }
+
+        /* コンポーネント */
+        .comp-header { font-weight: 700; font-size: 18px; padding: 8px 4px; }
+        .comp-text { font-size: 14px; line-height: 1.7; padding: 4px; color: #475569; }
+        .comp-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+        .comp-btn:active { opacity: 0.7; }
+        .comp-input { width: 100%; background: #f8faff; border: 1.5px solid #d1d9f0; border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #1e293b; outline: none; font-family: inherit; }
+        .comp-input:focus { border-color: #4f6ef7; }
+        .comp-image-wrap { border-radius: 12px; overflow: hidden; background: #f0f4ff; }
+        .comp-image-wrap img { width: 100%; object-fit: cover; display: block; }
+        .comp-image-title { font-weight: 700; font-size: 14px; color: #1e293b; margin-top: 8px; }
+        .comp-image-desc { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        /* グラフ */
+        .chart-wrap { background: #f8faff; border: 1.5px solid #d1d9f0; border-radius: 14px; padding: 14px; }
+        .chart-title { font-size: 12px; font-weight: 700; color: #4f6ef7; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+        .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; border-bottom: 1.5px solid #d1d9f0; padding: 0 4px; overflow-x: auto; }
+        .chart-bar-col { display: flex; flex-direction: column; align-items: center; min-width: 32px; flex-shrink: 0; justify-content: flex-end; }
+        .chart-bar-val { font-size: 9px; color: #4f6ef7; font-weight: 700; margin-bottom: 2px; }
+        .chart-bar { width: 24px; background: linear-gradient(to top, #4f6ef7, #818cf8); border-radius: 4px 4px 0 0; min-height: 4px; }
+        .chart-bar-label { font-size: 8px; color: #94a3b8; margin-top: 4px; text-align: center; white-space: nowrap; }
+        .chart-empty { text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0; line-height: 1.8; }
+
+        /* メモ一覧 */
+        .memo-list-wrap { background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px; padding: 14px; }
+        .memo-list-title { font-size: 12px; font-weight: 700; color: #16a34a; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+        .memo-item { background: #fff; border: 1px solid #d1fae5; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+        .memo-item-date { font-size: 11px; color: #94a3b8; }
+        .memo-item-text { font-size: 13px; color: #1e293b; margin-top: 2px; line-height: 1.5; }
+        .memo-empty { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px 0; }
+
+        /* 記録リスト */
+        .records-list { display: flex; flex-direction: column; gap: 8px; }
+        .record-item { background: #f8faff; border: 1px solid #d1d9f0; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; }
+        .record-item-info { flex: 1; }
+        .record-item-date { font-size: 11px; color: #94a3b8; }
+        .record-item-val { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .record-item-memo { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .record-item-btns { display: flex; gap: 6px; flex-shrink: 0; }
+        .record-btn { width: 28px; height: 28px; border: none; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+        .record-btn-edit { background: #eef1ff; color: #4f6ef7; }
+        .record-btn-del { background: #fee2e2; color: #ef4444; }
+
+        /* AI */
+        .ai-wrap { display: flex; flex-direction: column; gap: 10px; }
+        .ai-header { display: flex; justify-content: space-between; align-items: center; }
+        .ai-title { font-size: 13px; font-weight: 700; color: #7c3aed; }
+        .ai-badge { font-size: 10px; background: #f5f0ff; color: #7c3aed; border: 1px solid #d8b4fe; padding: 2px 8px; border-radius: 6px; }
+        .ai-label { font-size: 12px; color: #94a3b8; }
+        .ai-textarea { width: 100%; background: #f8faff; border: 1.5px solid #d1d9f0; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #1e293b; resize: none; font-family: inherit; outline: none; }
+        .ai-textarea:focus { border-color: #7c3aed; }
+        .ai-send-btn { width: 100%; padding: 12px; background: #7c3aed; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .ai-send-btn:active { opacity: 0.8; }
+        .ai-response { display: none; font-size: 13px; color: #475569; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; padding: 12px; line-height: 1.7; }
+
+        /* レビュー */
+        .review-tap-btn { width: 100%; background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 14px; padding: 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-family: inherit; }
+        .review-tap-label { font-size: 13px; font-weight: 700; color: #ea580c; display: flex; align-items: center; gap: 8px; }
+        .review-tap-sub { font-size: 11px; color: #fed7aa; }
+        .review-item-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #fff3e0; }
+        .review-item-label { font-size: 13px; color: #1e293b; font-weight: 600; }
+        .review-score-row { display: flex; gap: 4px; }
+        .score-btn { min-width: 72px; height: 52px; border-radius: 10px; border: 1.5px solid #d1d9f0; background: #f8faff; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px; }
+        .score-btn .score-mark { font-size: 18px; line-height: 1; }
+        .score-btn .score-label { font-size: 9px; font-weight: 600; }
+        .score-btn.active { background: #ea580c; border-color: #ea580c; color: #fff; }
+        .review-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: none; align-items: flex-end; justify-content: center; }
+        .review-modal-overlay.open { display: flex; }
+        .review-modal-box { background: #fff; border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -8px 40px rgba(0,0,0,0.15); max-height: 80vh; overflow-y: auto; }
+        .review-modal-title { font-size: 15px; font-weight: 700; color: #ea580c; display: flex; align-items: center; gap: 8px; }
+        .review-textarea { width: 100%; background: #fff; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #1e293b; resize: none; font-family: inherit; outline: none; }
+        .review-textarea:focus { border-color: #ea580c; }
+        .review-send-btn { width: 100%; padding: 12px; background: #ea580c; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .review-sent-msg { font-size: 12px; color: #16a34a; text-align: center; display: none; }
+
+        /* 通知 */
+        .notify-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .notify-overlay.open { display: flex; }
+        .notify-box { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 14px; }
+        .notify-msg { font-size: 14px; color: #1e293b; line-height: 1.6; }
+        .notify-btn { width: 100%; padding: 12px; background: #4f6ef7; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+        /* 編集モーダル */
+        .edit-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+        .edit-modal.open { display: flex; }
+        .edit-box { background: #fff; border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 -8px 40px rgba(0,0,0,0.12); }
+        .edit-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+        .edit-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .edit-input { width: 100%; background: #f8faff; border: 1.5px solid #d1d9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1e293b; outline: none; font-family: inherit; }
+        .edit-input:focus { border-color: #4f6ef7; }
+        .edit-input[type="date"] { -webkit-appearance: none; }
+        .edit-footer { display: flex; gap: 10px; }
+        .edit-cancel { flex: 1; padding: 12px; background: #e8edf8; color: #64748b; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .edit-save { flex: 2; padding: 12px; background: #4f6ef7; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    </style>
+</head>
+<body>
+    <div class="phone-wrap" id="phone-wrap">
+        <!-- ユーザーログイン画面 -->
+        <div id="user-login-screen" style="display:flex;flex:1;flex-direction:column;">
+            <div class="app-status">
+                <span id="app-title-login">アプリ</span>
+                <div style="display:flex;gap:6px;">
+                    <i class="fa-solid fa-signal"></i>
+                    <i class="fa-solid fa-wifi"></i>
+                    <i class="fa-solid fa-battery-full"></i>
+                </div>
+            </div>
+            <div class="user-login">
+                <div class="user-login-icon"><i class="fa-solid fa-user"></i></div>
+                <div class="user-login-title">あなたの名前を入力してください</div>
+                <div class="user-login-sub">入力した名前で記録が保存されます。<br>毎回同じ名前を入力してください。</div>
+                <input class="user-login-input" type="text" id="username-input" placeholder="例: 田中太郎" maxlength="20"
+                    onkeydown="if(event.key==='Enter') startApp();">
+                <div class="user-login-err" id="username-err">名前を入力してください</div>
+                <button class="user-login-btn" onclick="startApp()">
+                    <i class="fa-solid fa-right-to-bracket" style="margin-right:8px;"></i>はじめる
+                </button>
+            </div>
+        </div>
+
+        <!-- アプリ本体（ログイン後） -->
+        <div id="app-main" style="display:none;flex:1;flex-direction:column;">
+            <div class="app-status">
+                <span id="app-page-name">読み込み中...</span>
+                <div style="display:flex;gap:6px;">
+                    <i class="fa-solid fa-signal"></i>
+                    <i class="fa-solid fa-wifi"></i>
+                    <i class="fa-solid fa-battery-full"></i>
+                </div>
+            </div>
+            <div class="user-bar">
+                <div class="user-bar-name">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span id="user-bar-name-text"></span>
+                </div>
+                <button class="user-bar-logout" id="user-bar-logout-btn" onclick="doLogout()">名前を変える</button>
+            </div>
+            <div class="app-canvas" id="app-canvas">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>アプリを読み込んでいます...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notify-overlay" id="notify-overlay">
+        <div class="notify-box">
+            <div class="notify-msg" id="notify-msg"></div>
+            <button class="notify-btn" onclick="closeNotify()">OK</button>
+        </div>
+    </div>
+
+    <!-- 記録編集モーダル -->
+    <div class="edit-modal" id="edit-modal">
+        <div class="edit-box">
+            <div class="edit-title"><i class="fa-solid fa-pen" style="margin-right:6px;color:#4f6ef7;"></i>記録を編集</div>
+            <div>
+                <div class="edit-label">日付</div>
+                <input class="edit-input" type="date" id="edit-date">
+            </div>
+            <div>
+                <div class="edit-label">数値</div>
+                <input class="edit-input" type="number" id="edit-value" step="0.1">
+            </div>
+            <div>
+                <div class="edit-label">メモ</div>
+                <input class="edit-input" type="text" id="edit-memo" placeholder="メモ（任意）">
+            </div>
+            <div class="edit-footer">
+                <button class="edit-cancel" onclick="closeEditModal()">キャンセル</button>
+                <button class="edit-save" onclick="saveEdit()">保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- レビューモーダル -->
+    <div class="review-modal-overlay" id="review-modal-overlay" onclick="closeReviewModal(event)">
+        <div class="review-modal-box" id="review-modal-box">
+            <div class="review-modal-title"><i class="fa-solid fa-star"></i><span id="review-modal-comp-label">アプリの評価</span></div>
+            <div id="review-modal-items"></div>
+            <div>
+                <div style="font-size:11px;color:#64748b;margin-bottom:6px;">コメント（任意）</div>
+                <textarea class="review-textarea" id="review-modal-comment" rows="3" placeholder="感想・改善点など..."></textarea>
+            </div>
+            <button class="review-send-btn" id="review-modal-send-btn" onclick="submitReviewFromModal()">
+                <i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>評価を送る
+            </button>
+            <div class="review-sent-msg" id="review-modal-sent">ありがとうございました！評価を送りました。</div>
+            <button style="width:100%;padding:10px;background:#e8edf8;color:#64748b;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="closeReviewModalDirect()">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+    // =====================================================================
+    // GAS環境対応: var / function(){} のみ使用
+    // =====================================================================
+
+    var appPages = {};
+    var currentPageId = '';
+    var currentUserName = '';
+    var editingRowId = '';
+
+    // サンプルモード: 常にlocalStorageからアプリ定義を読む
+    var studentNo = 'sample';
+    var isPreviewMode = true;
+    var previewRecords = [];
+
+    (function() {
+        try {
+            var previewData = localStorage.getItem('sample_preview_appPages');
+            if (previewData) {
+                var parsed = JSON.parse(previewData);
+                if (parsed && Object.keys(parsed).length > 0) {
+                    appPages = parsed;
+                }
+            }
+        } catch(e) {}
+    })();
+
+    // =====================================================================
+    // 日付文字列のパース → M/D 形式
+    // =====================================================================
+    function formatDateLabel(dateStr) {
+        if (!dateStr) return '';
+        var s = String(dateStr);
+        // YYYY-MM-DD 形式
+        var m1 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m1) { return parseInt(m1[2], 10) + '/' + parseInt(m1[3], 10); }
+        // "Thu Aug 13 2026 ..." のような Date.toString() 形式
+        var months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+        var m2 = s.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})/);
+        if (m2 && months[m2[1]]) { return months[m2[1]] + '/' + parseInt(m2[2], 10); }
+        // MM/DD 形式はそのまま
+        var m3 = s.match(/^(\d{1,2})\/(\d{1,2})/);
+        if (m3) { return m3[1] + '/' + m3[2]; }
+        return s;
+    }
+
+    // =====================================================================
+    // ユーザーログイン
+    // =====================================================================
+    function startApp() {
+        var name = document.getElementById('username-input').value.trim();
+        if (!name) {
+            document.getElementById('username-err').className = 'user-login-err show';
+            return;
+        }
+        document.getElementById('username-err').className = 'user-login-err';
+        currentUserName = name;
+        document.getElementById('user-bar-name-text').textContent = name + ' さん';
+        document.getElementById('user-login-screen').style.display = 'none';
+        document.getElementById('app-main').style.display = 'flex';
+        loadApp();
+    }
+
+    function doLogout() {
+        currentUserName = '';
+        document.getElementById('username-input').value = '';
+        document.getElementById('user-login-screen').style.display = 'flex';
+        document.getElementById('app-main').style.display = 'none';
+    }
+
+    // =====================================================================
+    // アプリ読み込み
+    // =====================================================================
+    // ページIDを決定: 'home' があれば先、なければ最初のキー
+    function resolveFirstPageId(pages) {
+        if (pages['home']) return 'home';
+        var keys = Object.keys(pages);
+        return keys.length > 0 ? keys[0] : '';
+    }
+
+    function loadApp() {
+        if (Object.keys(appPages).length > 0) {
+            currentPageId = resolveFirstPageId(appPages);
+            renderPage();
+        } else {
+            showError('アプリデータが見つかりません。サンプルエディターで「プレビュー」を押してから開いてください。');
+        }
+    }
+
+    function showError(msg) {
+        var canvas = document.getElementById('app-canvas');
+        canvas.innerHTML = '<div class="error-box"><i class="fa-solid fa-circle-exclamation" style="font-size:32px;"></i><div>' + msg + '</div></div>';
+    }
+
+    // =====================================================================
+    // ページ描画
+    // =====================================================================
+    function renderPage() {
+        var page = appPages[currentPageId];
+        if (!page) return;
+        document.getElementById('app-page-name').textContent = page.name || '';
+        var canvas = document.getElementById('app-canvas');
+        canvas.innerHTML = '';
+        var comps = page.components || [];
+        if (comps.length === 0) {
+            canvas.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:40px;">パーツがありません。</div>';
+            return;
+        }
+        for (var i = 0; i < comps.length; i++) {
+            var el = buildCompEl(comps[i]);
+            if (el) canvas.appendChild(el);
+        }
+        canvas.scrollTop = 0;
+        var needLoad = false;
+        for (var j = 0; j < comps.length; j++) {
+            if (comps[j].type === 'chart' || comps[j].type === 'recordList' || comps[j].type === 'memoList') { needLoad = true; break; }
+        }
+        if (needLoad) loadAndRenderChart();
+    }
+
+    var colorMap = { indigo: '#4f6ef7', emerald: '#10b981', rose: '#f43f5e', slate: '#64748b' };
+
+    function buildCompEl(comp) {
+        var wrap = document.createElement('div');
+
+        if (comp.type === 'header') {
+            wrap.className = 'comp-header';
+            wrap.style.color = comp.textColor || colorMap[comp.color] || colorMap.indigo;
+            if (comp.fontSize) wrap.style.fontSize = comp.fontSize + 'px';
+            wrap.style.fontWeight = comp.bold !== false ? '700' : '400';
+            if (comp.underline) wrap.style.textDecoration = 'underline';
+            wrap.innerHTML = esc(comp.text || '').replace(/\n/g, '<br>');
+
+        } else if (comp.type === 'text') {
+            wrap.className = 'comp-text';
+            wrap.style.color = comp.textColor || (comp.color === 'slate' ? '#475569' : (colorMap[comp.color] || '#475569'));
+            if (comp.fontSize) wrap.style.fontSize = comp.fontSize + 'px';
+            if (comp.bold) wrap.style.fontWeight = '700';
+            if (comp.underline) wrap.style.textDecoration = 'underline';
+            wrap.innerHTML = esc(comp.text || '').replace(/\n/g, '<br>');
+
+        } else if (comp.type === 'button') {
+            var btn = document.createElement('button');
+            btn.className = 'comp-btn';
+            btn.textContent = comp.text || 'ボタン';
+            btn.style.background = colorMap[comp.color] || colorMap.indigo;
+            btn.style.color = '#fff';
+            (function(c) { btn.onclick = function() { executeAction(c); }; })(comp);
+            wrap.appendChild(btn);
+
+        } else if (comp.type === 'image') {
+            var imgDiv = document.createElement('div');
+            imgDiv.className = 'comp-image-wrap';
+            var img = document.createElement('img');
+            img.src = comp.img || '';
+            img.style.maxHeight = '200px';
+            img.onerror = function() { this.style.display = 'none'; };
+            imgDiv.appendChild(img);
+            wrap.appendChild(imgDiv);
+            if (comp.title) { var t = document.createElement('div'); t.className = 'comp-image-title'; t.textContent = comp.title; wrap.appendChild(t); }
+            if (comp.desc)  { var d = document.createElement('div'); d.className = 'comp-image-desc';  d.textContent = comp.desc;  wrap.appendChild(d); }
+
+        } else if (comp.type === 'input') {
+            var inp = document.createElement('input');
+            inp.id = 'inp_' + comp.id;
+            inp.className = 'comp-input';
+            if (comp.inputKey === 'memo') {
+                inp.type = 'text';
+                inp.placeholder = comp.placeholder || 'メモを入力...';
+            } else {
+                inp.type = 'number';
+                inp.step = '0.1';
+                inp.placeholder = comp.placeholder || '数値を入力';
+            }
+            wrap.appendChild(inp);
+
+        } else if (comp.type === 'memoList') {
+            wrap.id = 'memo-list-wrap-' + comp.id;
+            wrap.className = 'memo-list-wrap';
+            wrap.setAttribute('data-list-title', comp.listTitle || 'メモ・コメント一覧');
+            wrap.innerHTML = '<div class="memo-list-title"><i class="fa-solid fa-list"></i>' + esc(comp.listTitle || 'メモ・コメント一覧') + '</div>'
+                + '<div class="memo-empty">記録を保存するとここに表示されます。</div>';
+
+        } else if (comp.type === 'chart') {
+            wrap.id = 'chart-wrap-' + comp.id;
+            wrap.className = 'chart-wrap';
+            wrap.setAttribute('data-chart-title', comp.chartTitle || '');
+            wrap.setAttribute('data-chart-type', comp.chartType || 'bar');
+            wrap.setAttribute('data-chart-maxy', comp.chartMaxY != null ? String(comp.chartMaxY) : '');
+            wrap.setAttribute('data-value-input-id', comp.valueInputId || '');
+            wrap.innerHTML = buildChartHtml([], comp.chartTitle || '', comp.chartType || 'bar', null)
+                + '<div id="chart-records-' + comp.id + '" style="margin-top:10px;"></div>';
+
+        } else if (comp.type === 'ai' || comp.type === 'aiAdvice') {
+            wrap.className = 'ai-wrap';
+            // aiAdvice型との互換: placeholder → inputPlaceholder
+            if (comp.placeholder && !comp.inputPlaceholder) { comp.inputPlaceholder = comp.placeholder; }
+            wrap.innerHTML = buildAiHtml(comp);
+
+        } else if (comp.type === 'review') {
+            wrap.innerHTML = buildReviewTapHtml(comp);
+
+        } else {
+            return null;
+        }
+        return wrap;
+    }
+
+    function todayStr() {
+        var d = new Date();
+        var y = d.getFullYear();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var day = ('0' + d.getDate()).slice(-2);
+        return y + '-' + m + '-' + day;
+    }
+
+    // =====================================================================
+    // 記録の読み込み・グラフ描画
+    // =====================================================================
+    function loadAndRenderChart() {
+        // プレビューモードはインメモリ記録を使う
+        if (isPreviewMode) {
+            renderChartFromRecords(previewRecords.slice());
+            return;
+        }
+        if (typeof google === 'undefined' || !google.script) return;
+        google.script.run
+            .withSuccessHandler(function(result) {
+                if (result && result.success) {
+                    renderChartFromRecords(result.records || []);
+                    renderRecordList(result.records || []);
+                }
+            })
+            .withFailureHandler(function() {})
+            .getUserRecords({ studentNo: studentNo, userName: currentUserName });
+    }
+
+    function renderChartFromRecords(records) {
+        records.sort(function(a, b) {
+            return a.date > b.date ? 1 : a.date < b.date ? -1 : 0;
+        });
+        var chartWraps = document.querySelectorAll('[id^="chart-wrap-"]');
+        for (var i = 0; i < chartWraps.length; i++) {
+            var wrapEl = chartWraps[i];
+            var chartTitle = wrapEl.getAttribute('data-chart-title') || '';
+            var chartType  = wrapEl.getAttribute('data-chart-type') || 'bar';
+            var chartMaxYStr = wrapEl.getAttribute('data-chart-maxy') || '';
+            var chartMaxY = chartMaxYStr !== '' ? parseFloat(chartMaxYStr) : null;
+            var valueInputId = wrapEl.getAttribute('data-value-input-id') || '';
+            var wrapId = wrapEl.id;
+            var compId = wrapId.replace('chart-wrap-', '');
+            // valueInputId が設定されていればそのフォームのデータのみ使う
+            var chartRecords = valueInputId
+                ? records.filter(function(r) { return r.inputId === valueInputId; })
+                : records;
+            wrapEl.innerHTML = buildChartHtml(chartRecords, chartTitle, chartType, chartMaxY)
+                + '<div id="chart-records-' + compId + '">' + buildRecordListHtml(chartRecords) + '</div>';
+        }
+        var memoWraps = document.querySelectorAll('[id^="memo-list-wrap-"]');
+        for (var k = 0; k < memoWraps.length; k++) {
+            var listTitle = memoWraps[k].getAttribute('data-list-title') || 'メモ・コメント一覧';
+            var memoRecs = [];
+            for (var m = 0; m < records.length; m++) { if (records[m].memo) memoRecs.push(records[m]); }
+            memoWraps[k].innerHTML = buildMemoListHtml(memoRecs, listTitle);
+        }
+    }
+
+    function buildRecordListHtml(records) {
+        if (!records || records.length === 0) {
+            return '<div style="color:#94a3b8;font-size:11px;text-align:center;padding:10px 0;">まだ記録がありません。</div>';
+        }
+        var html = '<div class="records-list" style="margin-top:8px;">';
+        for (var i = 0; i < records.length; i++) {
+            var r = records[i];
+            var label = formatDateLabel(r.date);
+            html += '<div class="record-item">'
+                + '<div class="record-item-info">'
+                + '<div class="record-item-date">' + esc(label) + '</div>'
+                + '<div class="record-item-val">' + r.value + '</div>'
+                + (r.memo ? '<div class="record-item-memo">' + esc(r.memo) + '</div>' : '')
+                + '</div>'
+                + '<div class="record-item-btns">'
+                + (isPreviewMode
+                    ? '<button class="record-btn record-btn-del" onclick="previewDeleteRecord(' + i + ')"><i class="fa-solid fa-trash"></i></button>'
+                    : '<button class="record-btn record-btn-edit" onclick="openEditModal(\'' + escAttr(r.rowId) + '\',\'' + escAttr(r.date) + '\',' + r.value + ',\'' + escAttr(r.memo) + '\')"><i class="fa-solid fa-pen"></i></button>'
+                    + '<button class="record-btn record-btn-del" onclick="doDeleteRecord(\'' + escAttr(r.rowId) + '\')"><i class="fa-solid fa-trash"></i></button>')
+                + '</div>'
+                + '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function buildMemoListHtml(records, listTitle) {
+        var html = '<div class="memo-list-title"><i class="fa-solid fa-list"></i>' + esc(listTitle) + '</div>';
+        if (!records || records.length === 0) {
+            return html + '<div class="memo-empty">まだメモがありません。</div>';
+        }
+        for (var i = 0; i < records.length; i++) {
+            var r = records[i];
+            var label = formatDateLabel(r.date);
+            html += '<div class="memo-item">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+                + '<div class="memo-item-date">' + esc(label) + '</div>'
+                + (isPreviewMode ? '' :
+                    '<div style="display:flex;gap:4px;">'
+                    + '<button class="record-btn record-btn-edit" onclick="openEditModal(\'' + escAttr(r.rowId) + '\',\'' + escAttr(r.date) + '\',' + r.value + ',\'' + escAttr(r.memo) + '\')"><i class="fa-solid fa-pen"></i></button>'
+                    + '<button class="record-btn record-btn-del" onclick="doDeleteRecord(\'' + escAttr(r.rowId) + '\')"><i class="fa-solid fa-trash"></i></button>'
+                    + '</div>')
+                + '</div>'
+                + '<div class="memo-item-text">' + esc(r.memo) + '</div>'
+                + '</div>';
+        }
+        return html;
+    }
+
+    function buildChartHtml(records, chartTitle, chartType, chartMaxY) {
+        var title = chartTitle || '記録グラフ';
+        var type  = chartType  || 'bar';
+        var iconClass = type === 'line' ? 'fa-chart-line' : (type === 'pie' ? 'fa-chart-pie' : 'fa-chart-column');
+        if (!records || records.length === 0) {
+            return '<div class="chart-title"><i class="fa-solid ' + iconClass + '"></i> ' + esc(title) + '</div>'
+                + '<div class="chart-empty"><i class="fa-solid ' + iconClass + '" style="font-size:24px;display:block;margin-bottom:8px;color:#c7d2f0;"></i>データを入力すると<br>グラフが表示されます</div>';
+        }
+        var headerHtml = '<div class="chart-title"><i class="fa-solid ' + iconClass + '"></i> ' + esc(title) + (isPreviewMode ? '（プレビュー）' : '（' + esc(currentUserName) + '）') + '</div>';
+        if (type === 'pie') { return headerHtml + buildPieChart(records); }
+        if (type === 'line') { return headerHtml + buildLineChart(records, chartMaxY); }
+        return headerHtml + buildBarChart(records, chartMaxY);
+    }
+
+    function buildBarChart(records, chartMaxY) {
+        var BAR_AREA_H = 100; // px (chart-bars の高さ 120px からラベル分を引いた実効高さ)
+        var maxY = 0.001;
+        for (var i = 0; i < records.length; i++) { if (records[i].value > maxY) maxY = records[i].value; }
+        if (chartMaxY != null && chartMaxY > 0) { maxY = chartMaxY; }
+        var maxLabel = chartMaxY != null && chartMaxY > 0 ? '（上限: ' + chartMaxY + '）' : '';
+        var bars = '';
+        for (var i = 0; i < records.length; i++) {
+            var r = records[i];
+            var ratio = r.value / maxY;
+            if (ratio > 1) ratio = 1;
+            if (ratio < 0) ratio = 0;
+            var hpx = Math.max(4, Math.round(ratio * BAR_AREA_H));
+            var label = formatDateLabel(r.date);
+            bars += '<div class="chart-bar-col">'
+                + '<div class="chart-bar-val">' + r.value + '</div>'
+                + '<div class="chart-bar" style="height:' + hpx + 'px;"></div>'
+                + '<div class="chart-bar-label">' + esc(label) + '</div>'
+                + '</div>';
+        }
+        return '<div class="chart-bars">' + bars + '</div>'
+            + (maxLabel ? '<div style="font-size:9px;color:#94a3b8;text-align:right;margin-top:2px;padding-right:4px;">' + maxLabel + '</div>' : '');
+    }
+
+    function buildLineChart(records, chartMaxY) {
+        var W = 280, H = 110, pad = 24;
+        var vals = [];
+        for (var i = 0; i < records.length; i++) vals.push(records[i].value);
+        var maxY = 0.001, minY = 0;
+        for (var i = 0; i < vals.length; i++) { if (vals[i] > maxY) maxY = vals[i]; }
+        // 上限が設定されていればそちらを使う
+        if (chartMaxY != null && chartMaxY > 0) { maxY = chartMaxY; }
+        var range = maxY - minY || 1;
+        var n = records.length;
+        var pts = [];
+        for (var i = 0; i < n; i++) {
+            var x = pad + (n === 1 ? (W - pad*2)/2 : i * (W - pad*2) / (n-1));
+            var y = H - pad - ((vals[i] - minY) / range) * (H - pad*2);
+            pts.push({ x: x, y: y, v: vals[i], d: formatDateLabel(records[i].date) });
+        }
+        var pathD = '';
+        for (var i = 0; i < pts.length; i++) { pathD += (i === 0 ? 'M' : 'L') + pts[i].x + ',' + pts[i].y + ' '; }
+        var areaD = pathD + 'L' + pts[pts.length-1].x + ',' + (H-pad) + ' L' + pts[0].x + ',' + (H-pad) + ' Z';
+        var svg = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="overflow:visible;">'
+            + '<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4f6ef7" stop-opacity="0.3"/><stop offset="100%" stop-color="#4f6ef7" stop-opacity="0"/></linearGradient></defs>'
+            + '<path d="' + areaD + '" fill="url(#lg)"/>'
+            + '<path d="' + pathD + '" fill="none" stroke="#4f6ef7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+        for (var i = 0; i < pts.length; i++) {
+            svg += '<circle cx="' + pts[i].x + '" cy="' + pts[i].y + '" r="4" fill="#4f6ef7"/>'
+                + '<text x="' + pts[i].x + '" y="' + (pts[i].y - 7) + '" text-anchor="middle" font-size="8" fill="#4f6ef7" font-weight="bold">' + pts[i].v + '</text>'
+                + '<text x="' + pts[i].x + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8" fill="#94a3b8">' + esc(pts[i].d) + '</text>';
+        }
+        svg += '</svg>';
+        return svg;
+    }
+
+    function buildPieChart(records) {
+        var CX = 100, CY = 85, R = 70;
+        var total = 0;
+        for (var i = 0; i < records.length; i++) total += Math.abs(records[i].value) || 1;
+        var colors = ['#4f6ef7','#10b981','#f59e0b','#f43f5e','#8b5cf6','#0ea5e9','#ec4899','#14b8a6'];
+        var svg = '<svg width="100%" viewBox="0 0 200 180" style="overflow:visible;">';
+        var angle = -Math.PI / 2;
+        for (var i = 0; i < records.length; i++) {
+            var v = Math.abs(records[i].value) || 1;
+            var sweep = (v / total) * 2 * Math.PI;
+            var x1 = CX + R * Math.cos(angle);
+            var y1 = CY + R * Math.sin(angle);
+            var x2 = CX + R * Math.cos(angle + sweep);
+            var y2 = CY + R * Math.sin(angle + sweep);
+            var large = sweep > Math.PI ? 1 : 0;
+            var color = colors[i % colors.length];
+            svg += '<path d="M' + CX + ',' + CY + ' L' + x1 + ',' + y1 + ' A' + R + ',' + R + ' 0 ' + large + ',1 ' + x2 + ',' + y2 + ' Z" fill="' + color + '" opacity="0.85"/>';
+            var midAngle = angle + sweep / 2;
+            var lx = CX + (R + 14) * Math.cos(midAngle);
+            var ly = CY + (R + 14) * Math.sin(midAngle);
+            var label = formatDateLabel(records[i].date);
+            svg += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" font-size="7" fill="#475569">' + esc(label) + '</text>';
+            angle += sweep;
+        }
+        svg += '</svg>';
+        var legend = '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;">';
+        for (var i = 0; i < records.length; i++) {
+            var color2 = colors[i % colors.length];
+            var lbl = formatDateLabel(records[i].date);
+            legend += '<span style="font-size:9px;color:#475569;display:flex;align-items:center;gap:3px;">'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + color2 + ';display:inline-block;"></span>'
+                + esc(lbl) + '(' + records[i].value + ')</span>';
+        }
+        legend += '</div>';
+        return svg + legend;
+    }
+
+    // =====================================================================
+    // プレビュー用：インメモリ記録
+    // =====================================================================
+    function previewDeleteRecord(idx) {
+        previewRecords.splice(idx, 1);
+        renderChartFromRecords(previewRecords.slice());
+    }
+
+    // =====================================================================
+    // 記録リスト（既存ページ内record-list-area用）
+    // =====================================================================
+    function renderRecordList(records) {
+        var listEl = document.getElementById('record-list-area');
+        if (!listEl) return;
+        records.sort(function(a, b) { return a.date > b.date ? 1 : a.date < b.date ? -1 : 0; });
+        if (records.length === 0) {
+            listEl.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:16px;">まだ記録がありません。</div>';
+            return;
+        }
+        listEl.innerHTML = buildRecordListHtml(records);
+    }
+
+    // =====================================================================
+    // アクション
+    // =====================================================================
+    function executeAction(comp) {
+        if (comp.actionType === 'navigate') {
+            if (appPages[comp.actionTarget]) { currentPageId = comp.actionTarget; renderPage(); }
+        } else if (comp.actionType === 'saveRecord') {
+            doSaveRecord(comp.valueInputId || '');
+        } else if (comp.actionType === 'openUrl') {
+            if (comp.actionUrl) { window.open(comp.actionUrl, '_blank'); }
+            else { showNotify('URLが設定されていません。'); }
+        } else {
+            showNotify(comp.actionValue || 'ボタンが押されました！');
+        }
+    }
+
+    function doSaveRecord(valueInputId) {
+        var page = appPages[currentPageId];
+        if (!page) return;
+        var comps = page.components || [];
+        var dateVal = todayStr(), numVal = 0, memoVal = '';
+        var hasValue = false;
+        for (var i = 0; i < comps.length; i++) {
+            var c = comps[i];
+            if (c.type !== 'input') continue;
+            // valueInputId が指定されている場合はそのフォームのみ数値として読む
+            var el = document.getElementById('inp_' + c.id);
+            if (!el) continue;
+            var val = el.value.trim();
+            if (c.inputKey === 'value') {
+                if (!valueInputId || c.id === valueInputId) {
+                    numVal = parseFloat(val) || 0; hasValue = !!val;
+                }
+            } else if (c.inputKey === 'memo') { memoVal = val; }
+        }
+        if (!hasValue && !memoVal) { showNotify('数値またはメモを入力してください。'); return; }
+
+        // プレビュー時はインメモリに追加してグラフ再描画
+        if (isPreviewMode) {
+            previewRecords.push({ rowId: 'p' + Date.now(), date: dateVal, value: numVal, memo: memoVal, inputId: valueInputId || '' });
+            renderChartFromRecords(previewRecords.slice());
+            var inputs = document.querySelectorAll('.comp-input');
+            for (var i = 0; i < inputs.length; i++) { inputs[i].value = ''; }
+            showNotify('プレビュー：記録をグラフに反映しました（保存はされません）');
+            return;
+        }
+
+        if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showNotify('記録を保存しました！');
+                        loadAndRenderChart();
+                        var inputs = document.querySelectorAll('.comp-input');
+                        for (var i = 0; i < inputs.length; i++) { inputs[i].value = ''; }
+                    } else {
+                        showNotify('保存に失敗しました: ' + ((result && result.error) || ''));
+                    }
+                })
+                .withFailureHandler(function(err) { showNotify('エラー: ' + (err.message || err)); })
+                .saveUserRecord({ studentNo: studentNo, userName: currentUserName, date: dateVal, value: numVal, memo: memoVal, inputId: valueInputId || '' });
+        } else {
+            showNotify('GAS環境でのみ保存できます。');
+        }
+    }
+
+    // =====================================================================
+    // 記録の編集・削除
+    // =====================================================================
+    function openEditModal(rowId, date, value, memo) {
+        editingRowId = rowId;
+        document.getElementById('edit-date').value = date || todayStr();
+        document.getElementById('edit-value').value = value || '';
+        document.getElementById('edit-memo').value = memo || '';
+        document.getElementById('edit-modal').className = 'edit-modal open';
+    }
+
+    function closeEditModal() {
+        editingRowId = '';
+        document.getElementById('edit-modal').className = 'edit-modal';
+    }
+
+    function saveEdit() {
+        if (!editingRowId) return;
+        var date  = document.getElementById('edit-date').value;
+        var value = document.getElementById('edit-value').value;
+        var memo  = document.getElementById('edit-memo').value;
+        if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    closeEditModal();
+                    if (result && result.success) { loadAndRenderChart(); }
+                    else { showNotify('更新に失敗しました: ' + ((result && result.error) || '')); }
+                })
+                .withFailureHandler(function(err) { closeEditModal(); showNotify('エラー: ' + (err.message || err)); })
+                .updateUserRecord({ rowId: editingRowId, date: date, value: parseFloat(value) || 0, memo: memo });
+        }
+    }
+
+    function doDeleteRecord(rowId) {
+        if (!confirm('この記録を削除しますか？')) return;
+        if (typeof google !== 'undefined' && google.script) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) { loadAndRenderChart(); }
+                    else { showNotify('削除に失敗しました: ' + ((result && result.error) || '')); }
+                })
+                .withFailureHandler(function(err) { showNotify('エラー: ' + (err.message || err)); })
+                .deleteUserRecord({ rowId: rowId });
+        }
+    }
+
+    // =====================================================================
+    // AIコンポーネント
+    // =====================================================================
+    function buildAiHtml(comp) {
+        return '<div class="ai-header">'
+            + '<span class="ai-title"><i class="fa-solid fa-robot" style="margin-right:4px;"></i>' + esc(comp.label || 'AIアドバイス') + '</span>'
+            + '<span class="ai-badge">AI</span></div>'
+            + '<div class="ai-label">' + esc(comp.userInputLabel || '') + '</div>'
+            + '<textarea class="ai-textarea" id="ai_in_' + comp.id + '" rows="3" placeholder="' + escAttr(comp.inputPlaceholder || '入力してください...') + '"></textarea>'
+            + '<button class="ai-send-btn" onclick="triggerAi(\'' + comp.id + '\')">'
+            + '<i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>' + esc(comp.btnText || 'AIに聞く') + '</button>'
+            + '<div class="ai-response" id="ai_res_' + comp.id + '"></div>';
+    }
+
+    function triggerAi(compId) {
+        var page = appPages[currentPageId];
+        var comp = null;
+        if (page) { for (var i = 0; i < page.components.length; i++) { if (page.components[i].id === compId) { comp = page.components[i]; break; } } }
+        var inputEl = document.getElementById('ai_in_' + compId);
+        var resEl   = document.getElementById('ai_res_' + compId);
+        if (!inputEl || !resEl) return;
+        var userText = inputEl.value.trim();
+        resEl.style.display = 'block';
+        resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;color:#7c3aed;"></i>AIに問い合わせ中...';
+        // サンプルモード: モック回答
+        setTimeout(function() {
+            if (!userText) {
+                resEl.innerHTML = '<i class="fa-solid fa-circle-info" style="margin-right:4px;color:#f59e0b;"></i>何かを入力してからAIに聞いてみよう！';
+            } else {
+                resEl.innerHTML = '<i class="fa-solid fa-robot" style="margin-right:6px;color:#7c3aed;"></i>「' + esc(userText) + '」について：よく頑張りました！継続することが大切です。水分補給と睡眠もしっかりとりましょう。<br><span style="font-size:10px;color:#94a3b8;">※これはサンプル回答です</span>';
+            }
+        }, 1200);
+    }
+
+    // =====================================================================
+    // レビューコンポーネント（複数項目・モーダル式）
+    // =====================================================================
+    // 現在開いているレビューのcompId と各項目スコアを保持
+    var reviewModalCompId = '';
+    var reviewModalScores = {}; // { 項目名: スコア }
+    var reviewSubmitting = false; // 連打防止フラグ
+
+    // レビューボタン（タップで開くタイプ）
+    function buildReviewTapHtml(comp) {
+        var items = (comp.reviewItems && comp.reviewItems.length > 0)
+            ? comp.reviewItems
+            : ['全体評価'];
+        var label = comp.label || 'アプリの評価';
+        return '<button class="review-tap-btn" onclick="openReviewModal(\'' + escAttr(comp.id) + '\')">'
+            + '<div class="review-tap-label"><i class="fa-solid fa-star"></i>' + esc(label) + '</div>'
+            + '<div class="review-tap-sub">' + esc(items.length) + '項目 <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i></div>'
+            + '</button>';
+    }
+
+    function openReviewModal(compId) {
+        reviewModalCompId = compId;
+        reviewModalScores = {};
+        reviewSubmitting = false;
+
+        // compを取得
+        var comp = null;
+        var keys = Object.keys(appPages);
+        for (var p = 0; p < keys.length; p++) {
+            var comps = appPages[keys[p]].components || [];
+            for (var c = 0; c < comps.length; c++) {
+                if (comps[c].id === compId) { comp = comps[c]; break; }
+            }
+            if (comp) break;
+        }
+        if (!comp) return;
+
+        var items = (comp.reviewItems && comp.reviewItems.length > 0)
+            ? comp.reviewItems
+            : ['全体評価'];
+        var label = comp.label || 'アプリの評価';
+
+        document.getElementById('review-modal-comp-label').textContent = label;
+        document.getElementById('review-modal-comment').value = '';
+        document.getElementById('review-modal-sent').style.display = 'none';
+        document.getElementById('review-modal-send-btn').disabled = false;
+        document.getElementById('review-modal-send-btn').style.opacity = '1';
+
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+            var itemName = items[i];
+            html += '<div class="review-item-row">'
+                + '<div class="review-item-label">' + esc(itemName) + '</div>'
+                + '<div class="review-score-row" id="score-row-' + escAttr(compId) + '-' + i + '">'
+                + buildScoreBtns(compId, i, itemName)
+                + '</div></div>';
+        }
+        document.getElementById('review-modal-items').innerHTML = html;
+        document.getElementById('review-modal-overlay').className = 'review-modal-overlay open';
+    }
+
+    var SCORE_LABELS = ['', '▲', '○', '◎'];
+    var SCORE_NAMES  = ['', 'いまいち', 'よい', 'とてもよい'];
+
+    function buildScoreBtns(compId, itemIdx, itemName) {
+        var html = '';
+        var cur = reviewModalScores[itemName] || 0;
+        for (var s = 1; s <= 3; s++) {
+            html += '<button class="score-btn' + (cur === s ? ' active' : '') + '"'
+                + ' onclick="setScore(\'' + escAttr(compId) + '\',' + itemIdx + ',\'' + escAttr(itemName) + '\',' + s + ')">'
+                + '<span class="score-mark">' + SCORE_LABELS[s] + '</span>'
+                + '<span class="score-label">' + SCORE_NAMES[s] + '</span>'
+                + '</button>';
+        }
+        return html;
+    }
+
+    function setScore(compId, itemIdx, itemName, score) {
+        reviewModalScores[itemName] = score;
+        var rowEl = document.getElementById('score-row-' + compId + '-' + itemIdx);
+        if (rowEl) rowEl.innerHTML = buildScoreBtns(compId, itemIdx, itemName);
+    }
+
+    function closeReviewModal(event) {
+        // オーバーレイ背景クリックで閉じる
+        if (event && event.target !== document.getElementById('review-modal-overlay')) return;
+        closeReviewModalDirect();
+    }
+    function closeReviewModalDirect() {
+        document.getElementById('review-modal-overlay').className = 'review-modal-overlay';
+    }
+
+    function submitReviewFromModal() {
+        // 連打防止
+        if (reviewSubmitting) return;
+
+        // 全項目に点数が入っているか確認
+        var comp = null;
+        var keys = Object.keys(appPages);
+        for (var p = 0; p < keys.length; p++) {
+            var comps = appPages[keys[p]].components || [];
+            for (var c = 0; c < comps.length; c++) {
+                if (comps[c].id === reviewModalCompId) { comp = comps[c]; break; }
+            }
+            if (comp) break;
+        }
+        var items = (comp && comp.reviewItems && comp.reviewItems.length > 0)
+            ? comp.reviewItems : ['全体評価'];
+
+        for (var i = 0; i < items.length; i++) {
+            if (!reviewModalScores[items[i]]) {
+                showNotify('「' + items[i] + '」の評価を選んでください（▲○◎）');
+                return;
+            }
+        }
+
+        var comment = document.getElementById('review-modal-comment').value.trim();
+        // 後方互換のため rating は全項目の平均
+        var sum = 0;
+        for (var i = 0; i < items.length; i++) { sum += reviewModalScores[items[i]] || 0; }
+        var avgRating = Math.round(sum / items.length);
+
+        if (isPreviewMode) {
+            document.getElementById('review-modal-sent').style.display = 'block';
+            document.getElementById('review-modal-send-btn').disabled = true;
+            document.getElementById('review-modal-send-btn').style.opacity = '0.5';
+            return;
+        }
+
+        if (typeof google !== 'undefined' && google.script) {
+            // 送信中フラグをセット（連打防止）
+            reviewSubmitting = true;
+            var sendBtn = document.getElementById('review-modal-send-btn');
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.5';
+            sendBtn.textContent = '送信中...';
+
+            // ratingsのスナップショットを取る（非同期コールバック用）
+            var ratingsSnapshot = {};
+            for (var k in reviewModalScores) {
+                if (reviewModalScores.hasOwnProperty(k)) ratingsSnapshot[k] = reviewModalScores[k];
+            }
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    reviewSubmitting = false;
+                    if (result && result.success) {
+                        document.getElementById('review-modal-sent').style.display = 'block';
+                        // ボタンは送信済み表示のまま無効化
+                    } else {
+                        // 失敗時はボタンを戻す
+                        var btn = document.getElementById('review-modal-send-btn');
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>評価を送る';
+                        showNotify('送信に失敗しました: ' + ((result && result.error) || ''));
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    reviewSubmitting = false;
+                    var btn = document.getElementById('review-modal-send-btn');
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>評価を送る';
+                    showNotify('エラー: ' + (err.message || err));
+                })
+                .saveReview({ studentNo: studentNo, userName: currentUserName, rating: avgRating, ratings: ratingsSnapshot, comment: comment });
+        } else {
+            showNotify('GAS環境でのみ送信できます。');
+        }
+    }
+
+    // =====================================================================
+    // 通知・ユーティリティ
+    // =====================================================================
+    function showNotify(msg) {
+        document.getElementById('notify-msg').innerHTML = msg;
+        document.getElementById('notify-overlay').className = 'notify-overlay open';
+    }
+    function closeNotify() {
+        document.getElementById('notify-overlay').className = 'notify-overlay';
+    }
+
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escAttr(str) {
+        return String(str == null ? '' : str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // =====================================================================
+    // 初期化（サンプルモード: 名前入力をスキップ）
+    // =====================================================================
+    (function() {
+        // ユーザーバーにサンプルバナーを追加
+        var userBar = document.querySelector('.user-bar');
+        if (userBar) {
+            var banner = document.createElement('div');
+            banner.style.cssText = 'background:#fef3c7;border:1px solid #fde68a;color:#b45309;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;';
+            banner.innerHTML = '<i class="fa-solid fa-flask"></i> サンプル';
+            userBar.appendChild(banner);
+        }
+
+        if (Object.keys(appPages).length > 0) {
+            currentUserName = 'サンプルユーザー';
+            document.getElementById('user-bar-name-text').textContent = 'サンプルモード';
+            document.getElementById('user-bar-logout-btn').style.display = 'none';
+            document.getElementById('user-login-screen').style.display = 'none';
+            document.getElementById('app-main').style.display = 'flex';
+            loadApp();
+        } else {
+            // アプリ定義がない場合もログイン画面スキップしてエラー表示
+            currentUserName = 'サンプルユーザー';
+            document.getElementById('user-bar-name-text').textContent = 'サンプルモード';
+            document.getElementById('user-bar-logout-btn').style.display = 'none';
+            document.getElementById('user-login-screen').style.display = 'none';
+            document.getElementById('app-main').style.display = 'flex';
+            loadApp();
+        }
+    })();
+    </script>
+</body>
+</html>

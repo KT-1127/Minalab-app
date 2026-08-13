@@ -1,0 +1,1358 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>みんなのアプリラボ 先生向けマニュアル — 中学校技術科</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue:       #4f6ef7;
+      --blue-dark:  #3a56d4;
+      --blue-pale:  #eef2ff;
+      --indigo:     #6366f1;
+      --purple:     #7c3aed;
+      --teal:       #10b981;
+      --teal-pale:  #ecfdf5;
+      --amber:      #f59e0b;
+      --amber-pale: #fffbeb;
+      --rose:       #f43f5e;
+      --rose-pale:  #fff1f3;
+      --green:      #22c55e;
+      --green-pale: #f0fdf4;
+      --gray-50:    #f9fafb;
+      --gray-100:   #f3f4f6;
+      --gray-200:   #e5e7eb;
+      --gray-300:   #d1d5db;
+      --gray-400:   #9ca3af;
+      --gray-600:   #4b5563;
+      --gray-700:   #374151;
+      --gray-900:   #111827;
+      --text:       #1a202c;
+      --muted:      #64748b;
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.07);
+      --shadow-md:  0 4px 16px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+      --shadow-lg:  0 12px 40px rgba(0,0,0,0.09), 0 4px 12px rgba(0,0,0,0.05);
+      --radius:     14px;
+      --radius-lg:  20px;
+      --jp: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+      --ui: 'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--jp);
+      color: var(--text);
+      background: #f0f4ff;
+      font-size: 15px;
+      line-height: 1.85;
+    }
+
+    /* ---- PROGRESS ---- */
+    #prog {
+      position: fixed; top: 0; left: 0;
+      height: 3px; width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--teal));
+      z-index: 9999; border-radius: 0 3px 3px 0;
+      transition: width 0.08s linear;
+    }
+
+    /* ---- TOPNAV ---- */
+    .topnav {
+      position: sticky; top: 0;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--gray-200);
+      z-index: 100; padding: 0 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    .topnav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 15px; color: var(--text);
+    }
+    .brand-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #fff;
+    }
+    .topnav-links { display: flex; gap: 4px; list-style: none; }
+    .topnav-links a {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      transition: background .15s, color .15s;
+    }
+    .topnav-links a:hover { background: var(--blue-pale); color: var(--blue-dark); }
+    @media (max-width: 640px) { .topnav-links { display: none; } }
+
+    /* ---- HERO ---- */
+    .hero-wrap {
+      width: 100%;
+      background: #f0f4ff;
+      line-height: 0;
+      padding-top: 32px;
+    }
+    .hero-wrap img { width: 90%; max-width: 1000px; height: auto; display: block; margin: 0 auto; }
+    .hero-ph {
+      text-align: center; padding: 60px 20px; line-height: 1.6;
+    }
+    .hero-ph .ph-icon { font-size: 48px; opacity: 0.4; }
+    .hero-ph .ph-label { font-size: 14px; color: #8ba4d4; margin-top: 8px; }
+    .hero-ph .ph-file { font-size: 11px; font-family: monospace; color: #a5b4cc; margin-top: 4px; }
+
+    /* ---- PAGE ---- */
+    .page { max-width: 820px; margin: 0 auto; padding: 0 20px 80px; }
+
+    /* ---- TOC CARD ---- */
+    .toc-card {
+      background: #fff; border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200); box-shadow: var(--shadow-md);
+      padding: 40px 48px; margin: 40px 0 32px;
+    }
+    .toc-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--blue); font-family: var(--ui);
+      margin-bottom: 20px;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li {
+      display: grid; grid-template-columns: 28px 1fr; gap: 10px;
+      align-items: start; padding: 10px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .toc-list li:last-child { border-bottom: none; }
+    .toc-num { font-family: var(--ui); font-size: 11px; font-weight: 700; color: var(--blue); padding-top: 3px; }
+    .toc-list a { font-weight: 600; font-size: 14.5px; color: var(--text); text-decoration: none; transition: color .15s; }
+    .toc-list a:hover { color: var(--blue); }
+    .toc-sub { display: block; font-size: 12px; font-weight: 400; color: var(--gray-400); margin-top: 2px; }
+
+    /* ---- SECTION CARD ---- */
+    .sc {
+      background: #fff; border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200); box-shadow: var(--shadow-md);
+      padding: 48px 52px; margin-bottom: 24px;
+      scroll-margin-top: 72px;
+    }
+    @media (max-width: 600px) {
+      .sc { padding: 28px 22px; }
+      .toc-card { padding: 28px 22px; }
+    }
+    .sc-header { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 28px; }
+    .sc-num {
+      width: 48px; height: 48px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--indigo));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ui); font-size: 20px; font-weight: 800; color: #fff;
+      box-shadow: 0 4px 14px rgba(79,110,247,0.35);
+    }
+    .sc-title-wrap { flex: 1; padding-top: 4px; }
+    .sc-title-wrap h2 { font-size: 22px; font-weight: 900; color: var(--text); line-height: 1.3; }
+    .sc-underline {
+      height: 3px; width: 48px; margin-top: 8px;
+      background: linear-gradient(90deg, var(--blue), var(--indigo), var(--purple));
+      border-radius: 2px;
+    }
+    .sc h3 {
+      font-size: 16px; font-weight: 800; color: var(--text);
+      margin: 32px 0 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .tag {
+      display: inline-block; font-family: var(--ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      background: var(--blue-pale); color: var(--blue-dark);
+      border-radius: 6px; padding: 3px 8px; flex-shrink: 0;
+    }
+    .tag.teal  { background: var(--teal-pale);  color: #047857; }
+    .tag.amber { background: var(--amber-pale);  color: #b45309; }
+    .tag.rose  { background: var(--rose-pale);   color: #e11d48; }
+    .tag.green { background: var(--green-pale);  color: #15803d; }
+    .tag.purple{ background: #f5f0ff; color: #6d28d9; }
+
+    .sc h4 {
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--gray-400); font-family: var(--ui);
+      margin: 24px 0 10px;
+    }
+    p { color: var(--muted); margin-bottom: 14px; }
+    ul, ol { padding-left: 22px; color: var(--muted); margin-bottom: 14px; }
+    li { margin: 5px 0; }
+    strong { color: var(--text); font-weight: 700; }
+    code {
+      font-family: 'Menlo', 'Consolas', monospace; font-size: 12.5px;
+      background: var(--gray-100); border-radius: 5px; padding: 1px 6px; color: var(--indigo);
+    }
+
+    /* ---- FEATURE GRID ---- */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px; margin: 20px 0;
+    }
+    .feat-card {
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+      padding: 20px 18px; background: #fff;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .feat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 12px;
+    }
+    .feat-icon.blue   { background: linear-gradient(135deg,#dbeafe,#bfdbfe); }
+    .feat-icon.violet { background: linear-gradient(135deg,#ede9fe,#ddd6fe); }
+    .feat-icon.teal   { background: linear-gradient(135deg,#ccfbf1,#99f6e4); }
+    .feat-icon.amber  { background: linear-gradient(135deg,#fef3c7,#fde68a); }
+    .feat-icon.rose   { background: linear-gradient(135deg,#ffe4e6,#fecdd3); }
+    .feat-icon.green  { background: linear-gradient(135deg,#dcfce7,#bbf7d0); }
+    .feat-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .feat-desc  { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ---- FLOW horizontal ---- */
+    .flow-h {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+      margin: 24px 0; justify-content: flex-start;
+    }
+    .flow-pill {
+      background: linear-gradient(135deg, var(--blue-pale), #e0e8ff);
+      border: 1.5px solid #c7d5ff; border-radius: 50px;
+      padding: 10px 18px; font-size: 12.5px; font-weight: 700; color: var(--blue-dark);
+      text-align: center; line-height: 1.4; white-space: nowrap;
+    }
+    .flow-pill small { display: block; font-size: 10px; font-weight: 400; opacity: .75; }
+    .flow-arr {
+      width: 28px; height: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--indigo));
+      position: relative; flex-shrink: 0;
+    }
+    .flow-arr::after {
+      content: ''; position: absolute; right: -1px; top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent; border-left-color: var(--indigo);
+    }
+    @media (max-width: 600px) {
+      .flow-h { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .flow-arr { width: 2px; height: 20px; background: linear-gradient(180deg, var(--blue), var(--indigo)); }
+      .flow-arr::after { right: auto; top: auto; bottom: -1px; left: 50%;
+        transform: translateX(-50%); border: 5px solid transparent;
+        border-top-color: var(--indigo); border-left-color: transparent; }
+    }
+
+    /* ---- STEPS ---- */
+    .steps { list-style: none; padding: 0; margin: 16px 0; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; left: 19px; top: 8px;
+      width: 2px; bottom: 8px;
+      background: linear-gradient(180deg, var(--blue) 0%, var(--indigo) 60%, transparent 100%);
+      opacity: .2; border-radius: 2px;
+    }
+    .steps li { display: flex; gap: 18px; margin-bottom: 22px; align-items: flex-start; position: relative; }
+    .step-num {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--indigo));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ui); font-size: 14px; font-weight: 800; color: #fff;
+      box-shadow: 0 3px 10px rgba(79,110,247,0.3); position: relative; z-index: 1;
+    }
+    .step-body { flex: 1; padding-top: 6px; }
+    .step-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .step-desc { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+
+    /* ---- TABLE ---- */
+    .table-wrap {
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); margin: 16px 0;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead tr { background: linear-gradient(135deg, var(--blue), var(--indigo)); }
+    th { color: #fff; font-weight: 700; padding: 12px 16px; text-align: left; font-size: 13px; }
+    td { padding: 11px 16px; border-bottom: 1px solid var(--gray-100); color: var(--muted); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: var(--gray-50); }
+    .cell-tag {
+      font-family: monospace; font-size: 12px;
+      background: #1e1b4b; color: #a5b4fc;
+      border-radius: 5px; padding: 2px 7px;
+    }
+
+    /* ---- BADGE ---- */
+    .badge {
+      display: inline-block; padding: 3px 12px; border-radius: 50px;
+      font-size: 12px; font-weight: 700; font-family: var(--ui);
+    }
+    .badge-blue   { background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff; }
+    .badge-green  { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+    .badge-orange { background: linear-gradient(135deg, var(--amber), #d97706); color: #fff; }
+    .badge-red    { background: linear-gradient(135deg, var(--rose), #e11d48); color: #fff; }
+    .badge-purple { background: linear-gradient(135deg, var(--purple), var(--indigo)); color: #fff; }
+    .badge-gray   { background: var(--gray-200); color: var(--gray-600); }
+
+    /* ---- CALLOUT ---- */
+    .callout {
+      border-radius: var(--radius); padding: 16px 20px 16px 16px;
+      margin: 18px 0; display: flex; gap: 14px; align-items: flex-start;
+      border: 1px solid transparent;
+    }
+    .callout-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .callout-body { flex: 1; }
+    .callout-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .callout p, .callout ul { margin: 0; font-size: 13.5px; }
+    .callout ul { padding-left: 18px; }
+    .callout li { margin: 3px 0; }
+    .callout.info   { background: #eff6ff; border-color: #bfdbfe; }
+    .callout.info   .callout-ico  { background: #dbeafe; }
+    .callout.info   .callout-title { color: #1d4ed8; }
+    .callout.tip    { background: var(--green-pale); border-color: #bbf7d0; }
+    .callout.tip    .callout-ico  { background: #dcfce7; }
+    .callout.tip    .callout-title { color: #15803d; }
+    .callout.warn   { background: var(--amber-pale); border-color: #fde68a; }
+    .callout.warn   .callout-ico  { background: #fef3c7; }
+    .callout.warn   .callout-title { color: #b45309; }
+    .callout.danger { background: var(--rose-pale); border-color: #fecdd3; }
+    .callout.danger .callout-ico  { background: #ffe4e6; }
+    .callout.danger .callout-title { color: #e11d48; }
+
+    /* ---- MOCK (スクショ枠) ---- */
+    .mock {
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); margin: 22px 0;
+    }
+    .mock-body {
+      background: linear-gradient(160deg, #f0f4ff 0%, #f5f0ff 100%);
+      padding: 32px 24px; text-align: center;
+      min-height: 160px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .mock-body img { width: 100%; display: block; }
+    .mock .ph-icon { font-size: 36px; opacity: .35; }
+    .mock .ph-label { font-size: 13px; color: #7c8db5; font-weight: 600; }
+    .mock .ph-file { font-size: 11px; font-family: monospace; color: #a5b4cc; }
+
+    /* ---- MOCK SMALL ---- */
+    .mock-sm { display: flex; justify-content: center; margin: 16px 0; }
+    .mock-sm .mock { width: 100%; max-width: 360px; margin: 0; }
+    .mock-sm .mock-body { min-height: 100px; padding: 16px; }
+
+    /* ---- PROMPT BOX ---- */
+    .prompt-box {
+      background: #0f0e2a; border-radius: var(--radius);
+      padding: 24px 28px; margin: 18px 0;
+    }
+    .pb-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #7c6ef5; font-family: var(--ui); margin-bottom: 12px;
+    }
+    .prompt-box pre {
+      font-family: 'Menlo','Consolas',monospace; font-size: 12.5px;
+      color: #c9d1f5; line-height: 1.85; white-space: pre-wrap; word-break: break-all;
+    }
+
+    /* ---- PART PALETTE PREVIEW ---- */
+    .parts-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px; margin: 16px 0;
+    }
+    .part-item {
+      background: #f8faff; border: 1px solid var(--gray-200);
+      border-radius: 12px; padding: 14px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; color: var(--blue);
+      text-align: center;
+    }
+    .part-item .pi { font-size: 20px; }
+    .part-item.ai { background: #fdf8ff; border-color: #d8c4f0; color: var(--purple); }
+    .part-item.rv { background: #fff7ed; border-color: #fed7aa; color: #ea580c; }
+
+    /* ---- FOOTER ---- */
+    footer {
+      background: linear-gradient(135deg, #1a1a3e, #0f172a);
+      color: rgba(255,255,255,0.45); text-align: center;
+      padding: 48px 24px; font-size: 13px; line-height: 2; margin-top: 40px;
+    }
+    footer strong { color: rgba(255,255,255,0.75); }
+
+    @media print {
+      .topnav, #prog { display: none; }
+      body { background: white; }
+      .sc, .toc-card { box-shadow: none; page-break-inside: avoid; }
+      .page { max-width: 100%; padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<!-- TOPNAV -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <div class="brand-icon">✦</div>
+    みんなのアプリラボ — 先生向けマニュアル
+  </div>
+  <ul class="topnav-links">
+    <li><a href="#overview">概要</a></li>
+    <li><a href="#setup">初期設定</a></li>
+    <li><a href="#editor">エディター</a></li>
+    <li><a href="#student-app">生徒アプリ</a></li>
+    <li><a href="#data">データ確認</a></li>
+    <li><a href="#sheets">シート構成</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero-wrap">
+  <img src="img/hero_top.png" alt="みんなのアプリラボ"
+       onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+  <div class="hero-ph" style="display:none;">
+    <div class="ph-icon">📷</div>
+    <div class="ph-label">トップ画像を配置してください</div>
+    <div class="ph-file">img/hero_top.png</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- サンプルエディターバナー -->
+  <div style="background:linear-gradient(135deg,#4f6ef7,#7c3aed);border-radius:20px;padding:32px 40px;margin:40px 0 0;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+    <div>
+      <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Try it now</div>
+      <div style="color:#fff;font-size:20px;font-weight:900;margin-bottom:8px;">まずサンプルで試してみよう</div>
+      <div style="color:rgba(255,255,255,0.8);font-size:13px;line-height:1.7;">スプレッドシートのセットアップ不要。<br>パーツを追加してアプリがどう作れるか体験できます。</div>
+    </div>
+    <a href="sample_editor.html" target="_blank"
+       style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#4f6ef7;font-weight:800;font-size:14px;padding:14px 28px;border-radius:14px;text-decoration:none;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:transform 0.15s;"
+       onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
+      <i class="fa-solid fa-flask" style="font-size:18px;"></i>
+      サンプルエディターを開く
+    </a>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-title">目次 / Contents</div>
+    <ol class="toc-list">
+      <li>
+        <span class="toc-num">01</span>
+        <div>
+          <a href="#overview">みんなのアプリラボ でできること</a>
+          <span class="toc-sub">ツールの概要・授業の流れ</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">02</span>
+        <div>
+          <a href="#setup">初期設定（先生のみ・最初の1回）</a>
+          <span class="toc-sub">スプレッドシートのコピー・GAS デプロイ・生徒登録</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">03</span>
+        <div>
+          <a href="#editor">エディターで生徒はアプリを作る</a>
+          <span class="toc-sub">パーツの種類・画面の作り方・保存と公開</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">04</span>
+        <div>
+          <a href="#student-app">完成したアプリを使う（生徒ユーザー）</a>
+          <span class="toc-sub">名前入力・データ保存・グラフ・AIアドバイス・レビュー</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">05</span>
+        <div>
+          <a href="#data">データ・グラフタブで確認する</a>
+          <span class="toc-sub">記録一覧・レビュー集計＋AI分析・AIアドバイスログ</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">06</span>
+        <div>
+          <a href="#sheets">スプレッドシートのシート構成</a>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">07</span>
+        <div>
+          <a href="#faq">よくある質問</a>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- ================================================================
+       1. OVERVIEW
+  ================================================================ -->
+  <div class="sc" id="overview">
+    <div class="sc-header">
+      <div class="sc-num">1</div>
+      <div class="sc-title-wrap">
+        <h2>みんなのアプリラボ でできること</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p><strong>みんなのアプリラボ</strong> は、プログラムを書かずにWEBアプリを作れるノーコードエディターです。中学校技術科の授業で、生徒が「課題解決のためのアプリ」を設計・作成・評価する一連の活動を1つのツールでサポートします。</p>
+    <p>生徒はパスワードでログインしてエディターを開き、パーツを並べてアプリを組み立てます。完成したアプリは同じURLで友達も使えて、記録データ・AI相談・レビューがすべてスプレッドシートに自動保存されます。先生はそのデータをリアルタイムで確認できます。</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon blue">📱</div>
+        <div class="feat-title">ノーコードでアプリ作成</div>
+        <div class="feat-desc">パーツをクリックして追加するだけ。プログラミング知識がなくてもWEBアプリが完成します。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon teal">📊</div>
+        <div class="feat-title">記録データ&グラフ</div>
+        <div class="feat-desc">アプリに入力された数値が棒グラフ・折れ線・円グラフで自動表示されます。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon violet">🤖</div>
+        <div class="feat-title">AIアドバイス機能</div>
+        <div class="feat-desc">生徒が質問を入力するとAIが答えます。やり取りはスプレッドシートに自動記録されます。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon rose">⭐</div>
+        <div class="feat-title">レビュー・評価機能</div>
+        <div class="feat-desc">作ったアプリをほかの人が評価できます。▲○◎の3段階と自由コメントで収集します。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon amber">👩‍🏫</div>
+        <div class="feat-title">先生向けデータ確認</div>
+        <div class="feat-desc">記録一覧・レビュー集計・AIログをエディターのデータタブで一括確認できます。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon green">🔗</div>
+        <div class="feat-title">1つのURLで完結</div>
+        <div class="feat-desc">生徒も先生もアプリ利用者も、同じURLにアクセスするだけ。インストール不要です。</div>
+      </div>
+    </div>
+
+    <h3><span class="tag">FLOW</span>授業の流れとシステムの対応関係</h3>
+    <div style="display:flex;align-items:center;flex-wrap:nowrap;gap:0;margin:24px 0;">
+      <div class="flow-pill" style="padding:8px 10px;font-size:11px;flex:1;text-align:center;">① 課題の設定<small>先生が説明</small></div>
+      <div class="flow-arr" style="flex-shrink:0;width:16px;"></div>
+      <div class="flow-pill" style="padding:8px 10px;font-size:11px;flex:1;text-align:center;">② アプリ設計<small>エディターで作成</small></div>
+      <div class="flow-arr" style="flex-shrink:0;width:16px;"></div>
+      <div class="flow-pill" style="padding:8px 10px;font-size:11px;flex:1;text-align:center;">③ データ収集<small>アプリを友達が使う</small></div>
+      <div class="flow-arr" style="flex-shrink:0;width:16px;"></div>
+      <div class="flow-pill" style="padding:8px 10px;font-size:11px;flex:1;text-align:center;">④ 考察・発表<small>グラフ・データで振り返る</small></div>
+      <div class="flow-arr" style="flex-shrink:0;width:16px;"></div>
+      <div class="flow-pill" style="padding:8px 10px;font-size:11px;flex:1;text-align:center;">⑤ 先生確認<small>データ・グラフタブ</small></div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       2. SETUP
+  ================================================================ -->
+  <div class="sc" id="setup">
+    <div class="sc-header">
+      <div class="sc-num">2</div>
+      <div class="sc-title-wrap">
+        <h2>初期設定（先生のみ・最初の1回）</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-ico">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">授業開始前に一度だけ行う作業です</div>
+        <p>設定が完了すれば、以降の授業では URL を共有するだけで使えます。所要時間：約 15〜20 分。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">STEP 1</span>スプレッドシートをコピーする</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">配布スプレッドシートをマイドライブにコピーする</div>
+          <div class="step-desc">下のボタンをクリックすると「コピーを作成」ページが開きます。ファイル名は自由に変更してください。</div>
+          <div class="step-desc" style="margin-top:10px;">
+            <a href="https://docs.google.com/spreadsheets/d/1lpOJC3RFtgTY8m3lS1UdMI-6sPQOaTcCryVFaR8LjNA/copy" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#4f6ef7,#6366f1);color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;">
+              📋 スプレッドシートをコピーする
+            </a>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">「生徒情報」シートに生徒のデータを入力する</div>
+          <div class="step-desc">コピーしたスプレッドシートを開き、「生徒情報」シートに以下の情報を入力します。1行1人です。</div>
+        </div>
+      </li>
+    </ul>
+
+    <h4>「生徒情報」シートの列構成</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>列</th><th>内容</th><th>入力例</th><th>注意</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="cell-tag">A列</span></td>
+            <td>名簿番号（数値）</td><td>1, 2, 3…</td>
+            <td>重複しないこと</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">B列</span></td>
+            <td>パスワード</td><td>pass01, pass02…</td>
+            <td>生徒に配布する文字列</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">C列</span></td>
+            <td>生徒の名前</td><td>田中太郎</td>
+            <td>エディターの表示名になります</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">D〜</span></td>
+            <td>アプリ定義JSON・公開URL</td><td>（自動で埋まります）</td>
+            <td>触らないでください</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">先生アカウントの登録方法</div>
+        <p>先生用のパスワードは GAS スクリプトプロパティの <code>TEACHER_PASSWORD</code> で設定します（後述）。先生は「生徒情報」シートに追加せず、別パスワードでログインします。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">STEP 2</span>Apps Script を開いてプロパティを設定する</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">スクリプトエディタを開く</div>
+          <div class="step-desc">スプレッドシートのメニューから「拡張機能」→「Apps Script」をクリックします。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">スクリプトプロパティを設定する</div>
+          <div class="step-desc">「プロジェクトの設定」→「スクリプト プロパティ」に以下を追加します。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>プロパティ名</th><th>値の内容</th><th>必須</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="cell-tag">AZURE_OPENAI_ENDPOINT</span></td>
+            <td>Azure OpenAI のエンドポイント URL</td>
+            <td>AIを使う場合</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">AZURE_OPENAI_API_KEY</span></td>
+            <td>Azure OpenAI の API キー</td>
+            <td>AIを使う場合</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">AZURE_OPENAI_DEPLOYMENT</span></td>
+            <td>デプロイメント名（例：gpt-4o）</td>
+            <td>AIを使う場合</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">OPENAI_API_KEY</span></td>
+            <td>OpenAI の API キー（Azure の代わりに使う場合）</td>
+            <td>どちらか片方</td>
+          </tr>
+          <tr>
+            <td><span class="cell-tag">TEACHER_PASSWORD</span></td>
+            <td>先生ログイン用パスワード（任意の文字列）</td>
+            <td>必須</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">AI が不要な場合は省略できます</div>
+        <p>AI 関連のプロパティを設定しなくても、記録・グラフ・レビュー機能は使えます。その場合、AIアドバイスパーツはエラーを返しますのでご注意ください。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">STEP 3</span>ウェブアプリとしてデプロイする</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">「デプロイ」→「新しいデプロイ」をクリック</div>
+          <div class="step-desc">種類は「ウェブアプリ」を選択します。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">アクセスできるユーザーを「全員」に設定</div>
+          <div class="step-desc">「次のユーザーとして実行」→ 自分のアカウント、「アクセスできるユーザー」→「全員」を選んでデプロイします。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">表示された URL を生徒・先生に共有する</div>
+          <div class="step-desc">Classroom や授業掲示物で URL を共有します。生徒も先生も同じ URL からアクセスします。パスワードで自動的に振り分けられます。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">コードを更新したときは「新しいデプロイ」で</div>
+        <p>GAS のコードを変更した後は「デプロイ」→「デプロイを管理」→「編集（鉛筆アイコン）」→「バージョン（新しいバージョン）」で保存してください。URL は変わりません。</p>
+      </div>
+    </div>
+
+
+    <h3><span class="tag green">DONE</span>ログイン画面の確認</h3>
+    <p>デプロイ後に URL を開くと、パスワード入力画面が表示されます。先生用パスワードでログインすると直接先生エディターへ、生徒用パスワードでログインするとエディターへ遷移します。</p>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/login_screen.png" alt="ログイン画面"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">ログイン画面（パスワード入力欄）</div>
+          <div class="ph-file">img/login_screen.png</div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ================================================================
+       3. EDITOR
+  ================================================================ -->
+  <div class="sc" id="editor">
+    <div class="sc-header">
+      <div class="sc-num">3</div>
+      <div class="sc-title-wrap">
+        <h2>エディターで生徒はアプリを作る</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>生徒がパスワードでログインすると、<strong>みんなのアプリラボ エディター</strong>が開きます。左のサイドバーでパーツを選んで追加し、中央のスマホプレビューでリアルタイムに確認しながらアプリを組み立てます。</p>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/editor_overview.png" alt="エディター全体"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">エディターの全体画面（サイドバー・プレビュー・プロパティパネル）</div>
+          <div class="ph-file">img/editor_overview.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag">PARTS</span>追加できるパーツ一覧</h3>
+    <div class="parts-grid">
+      <div class="part-item"><div class="pi">🔤</div>見出し</div>
+      <div class="part-item"><div class="pi">📝</div>テキスト</div>
+      <div class="part-item"><div class="pi">⬛</div>ボタン</div>
+      <div class="part-item"><div class="pi">🖼️</div>画像カード</div>
+      <div class="part-item"><div class="pi">⌨️</div>入力フォーム</div>
+      <div class="part-item"><div class="pi">📊</div>グラフ表示</div>
+      <div class="part-item"><div class="pi">📋</div>メモ一覧</div>
+      <div class="part-item ai"><div class="pi">🤖</div>AIアドバイス</div>
+      <div class="part-item rv"><div class="pi">⭐</div>レビュー</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>パーツ</th><th>できること</th><th>設定できる項目</th></tr></thead>
+        <tbody>
+          <tr><td><strong>見出し</strong></td><td>画面タイトルや区切りの大きな文字</td><td>テキスト・文字色・サイズ・太字・下線</td></tr>
+          <tr><td><strong>テキスト</strong></td><td>説明文・メモ</td><td>テキスト・文字色・サイズ・太字・下線</td></tr>
+          <tr><td><strong>ボタン</strong></td><td>画面移動・データ保存・URL を開く・メッセージ表示</td><td>ボタン文字・色・アクションの種類</td></tr>
+          <tr><td><strong>画像カード</strong></td><td>URL 指定で画像を表示</td><td>タイトル・説明文・画像URL</td></tr>
+          <tr><td><strong>入力フォーム</strong></td><td>数値またはメモを入力する欄</td><td>ヒント文・役割（数値 or メモ）</td></tr>
+          <tr><td><strong>グラフ表示</strong></td><td>保存されたデータを棒・折れ線・円グラフで表示</td><td>タイトル・種類・縦軸上限・対象フォーム</td></tr>
+          <tr><td><strong>メモ一覧</strong></td><td>保存されたメモを日付順で一覧表示</td><td>一覧タイトル</td></tr>
+          <tr><td><strong>AIアドバイス</strong></td><td>生徒が入力した文章に AI が回答</td><td>見出し・ラベル・システムプロンプト</td></tr>
+          <tr><td><strong>レビュー</strong></td><td>アプリへの評価を収集するボタン</td><td>タイトル・評価項目（複数設定可）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 入力フォーム詳細 -->
+    <h3><span class="tag teal">PARTS</span>入力フォームの設定</h3>
+    <p>入力フォームは、生徒がアプリに数値やメモを入力するためのパーツです。グラフ表示・保存ボタンと組み合わせて使います。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>設定項目</th><th>内容</th><th>例</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>ヒント文（プレースホルダー）</strong></td>
+            <td>入力欄に薄く表示されるガイドテキスト</td>
+            <td>「今日の歩数を入力」「体重（kg）」</td>
+          </tr>
+          <tr>
+            <td><strong>役割</strong></td>
+            <td>「数値入力」または「メモ入力」を選ぶ</td>
+            <td>歩数・体重などは「数値」、感想などは「メモ」</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">「数値入力」と「メモ入力」の違い</div>
+        <ul>
+          <li><strong>数値入力</strong>：グラフに表示するデータに使います。保存ボタン・グラフとの紐づけができます。</li>
+          <li><strong>メモ入力</strong>：日記・感想など文字列の記録に使います。「メモ一覧」パーツと組み合わせて使います。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/editor_input_form.png" alt="入力フォームのプロパティ設定"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">入力フォームのプロパティパネル（役割の選択）</div>
+          <div class="ph-file">img/editor_input_form.png</div>
+        </div>
+      </div>
+    </div></div>
+
+    <!-- グラフ表示詳細 -->
+    <h3><span class="tag amber">PARTS</span>グラフ表示の設定</h3>
+    <p>グラフ表示パーツは、保存された数値データを自動でグラフ化します。<strong>「グラフに使う入力フォーム」を必ず設定してください。</strong>設定しないとデータが表示されません。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>設定項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>グラフタイトル</strong></td>
+            <td>グラフの上に表示される名前（例：「歩数の記録」）</td>
+          </tr>
+          <tr>
+            <td><strong>グラフの種類</strong></td>
+            <td>棒グラフ・折れ線グラフ・円グラフから選ぶ</td>
+          </tr>
+          <tr>
+            <td><strong>縦軸の最大値</strong></td>
+            <td>グラフのY軸上限（空欄でデータに合わせて自動）</td>
+          </tr>
+          <tr>
+            <td><strong>グラフに使う入力フォーム ⭐</strong></td>
+            <td>このグラフに表示するデータの入力元フォームを選ぶ。アプリ内の全ページの数値フォームが選択肢に出ます。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-ico">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">「グラフに使う入力フォーム」は必ず設定する</div>
+        <p>グラフパーツと入力フォームは自動でつながりません。プロパティパネルで<strong>どの入力フォームのデータを使うか</strong>を明示的に選ぶ必要があります。同様に、保存ボタンも「保存する入力フォーム」を指定します。</p>
+      </div>
+    </div>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/editor_chart_prop.png" alt="グラフのプロパティ設定"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">グラフパーツのプロパティパネル（入力フォームの選択）</div>
+          <div class="ph-file">img/editor_chart_prop.png</div>
+        </div>
+      </div>
+    </div></div>
+
+    <h3><span class="tag rose">POINT</span>入力フォーム・ボタン・グラフの正しい紐づけ方</h3>
+    <p>データを正しく記録・表示するには、<strong>3つのパーツを同じ入力フォームで紐づける</strong>ことが重要です。</p>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">正しい設定の手順</div>
+        <ol style="padding-left:18px;color:var(--muted);font-size:13.5px;line-height:1.9;">
+          <li>「入力フォーム」パーツを追加し、役割を「<strong>数値入力</strong>」に設定する</li>
+          <li>「ボタン」パーツを追加し、アクションを「<strong>記録を保存する</strong>」に設定。その下の「<strong>保存する入力フォーム</strong>」で①の入力フォームを選ぶ</li>
+          <li>「グラフ表示」パーツを追加し、「<strong>グラフに使う入力フォーム</strong>」で①の入力フォームを選ぶ</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/editor_link_diagram.png" alt="入力フォームとグラフの紐づけ"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">入力フォーム・保存ボタン・グラフを同じフォームに紐づけた例</div>
+          <div class="ph-file">img/editor_link_diagram.png</div>
+        </div>
+      </div>
+    </div></div>
+
+    <h3><span class="tag teal">SCREEN</span>画面の追加・並び替え</h3>
+    <p>サイドバー上部の「＋ 新規画面」で画面を追加できます。▲▼ボタンで順番を並び替えることもできます。ボタンパーツの「タップ時のアクション → 画面を切り替える」で画面間の移動を設定します。</p>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">「ホーム画面」は最初のページ</div>
+        <p>キー名が <code>home</code> の画面が公開アプリの最初のページになります。テンプレートを使うと自動的に設定されます。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag amber">SAVE</span>保存と公開の方法</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ボタン</th><th>何をするか</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>💾 保存</strong></td>
+            <td>アプリの定義をスプレッドシートに保存します。公開はされません。</td>
+          </tr>
+          <tr>
+            <td><strong>▶ プレビュー</strong></td>
+            <td>現在の編集内容を別タブでプレビューします（保存せず確認）。</td>
+          </tr>
+          <tr>
+            <td><strong>🚀 保存して公開</strong></td>
+            <td>保存してから公開アプリのURLを別タブで開きます。友達が使える状態になります。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">テンプレートからスタートするのがおすすめ</div>
+        <p>右上の「テンプレート」ボタンから「運動記録」「食事記録」「睡眠記録」などのひな形を選んで始めると、基本的な構成が自動で入ります。そこからカスタマイズしましょう。</p>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/editor_template.png" alt="テンプレート選択モーダル"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">テンプレート選択モーダル（4種類）</div>
+          <div class="ph-file">img/editor_template.png</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       4. STUDENT APP
+  ================================================================ -->
+  <div class="sc" id="student-app">
+    <div class="sc-header">
+      <div class="sc-num">4</div>
+      <div class="sc-title-wrap">
+        <h2>完成したアプリを使う（生徒ユーザー）</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>「保存して公開」を押すと、同じURLで作ったアプリが誰でも使えるようになります。友達がアプリを使うと、そのデータはエディターの「データ・グラフ」タブから確認できます。</p>
+
+    <h3><span class="tag green">STEP 1</span>名前を入力してはじめる</h3>
+    <p>アプリを開くと、最初に名前の入力画面が表示されます。入力した名前でデータが保存されます。毎回同じ名前を入力するよう生徒に伝えてください。</p>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/app_name_input.png" alt="名前入力画面"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">アプリ起動時の名前入力画面</div>
+          <div class="ph-file">img/app_name_input.png</div>
+        </div>
+      </div>
+    </div></div>
+
+    <h3><span class="tag">STEP 2</span>データを入力・グラフで確認する</h3>
+    <p>入力フォームに数値やメモを入力して「記録を保存する」ボタンを押すと、スプレッドシートに保存されます。グラフパーツが同じ画面にあれば、保存後に自動でグラフが更新されます。</p>
+
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">グラフは自分のデータだけ表示されます</div>
+        <p>グラフには、ログインした名前（ユーザー名）で保存されたデータだけが表示されます。ほかの人のデータは先生のデータ確認タブからのみ見られます。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag violet">STEP 3</span>AIアドバイスを使う</h3>
+    <p>AIアドバイスパーツが配置されている場合、テキストエリアに質問を入力してボタンを押すと AI が回答します。やり取りはスプレッドシートの「AIログ」シートに自動記録されます。</p>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/app_ai_advice.png" alt="AIアドバイス"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">AIアドバイスの入力と回答表示</div>
+          <div class="ph-file">img/app_ai_advice.png</div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="callout warn">
+      <div class="callout-ico">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">システムプロンプトを適切に設定してください</div>
+        <p>エディターのAIアドバイスパーツのプロパティにある「システムプロンプト」が AI の役割・制限を決めます。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag amber">STEP 4</span>レビュー（評価）を送る</h3>
+    <p>レビューパーツのボタンをタップするとモーダルが開きます。▲・○・◎の3段階と自由コメントでアプリを評価できます。送信するとスプレッドシートの「レビュー」シートに保存されます。</p>
+
+    <div class="mock-sm"><div class="mock">
+      <div class="mock-body">
+        <img src="img/app_review_modal.png" alt="レビューモーダル"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">レビューモーダル（▲○◎の評価+コメント入力）</div>
+          <div class="ph-file">img/app_review_modal.png</div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ================================================================
+       5. DATA TAB
+  ================================================================ -->
+  <div class="sc" id="data">
+    <div class="sc-header">
+      <div class="sc-num">5</div>
+      <div class="sc-title-wrap">
+        <h2>「データ・グラフ」タブで確認する</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">「データ・グラフ」タブは生徒のエディター画面にあります</div>
+        <p>生徒がパスワードでログインしてエディターを開き、画面右上の「<strong>データ・グラフ</strong>」ボタンを押すと確認できます。<br>データは3つのタブに分かれています。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">TAB 1</span>記録データ — ユーザーの記録一覧</h3>
+    <p>アプリを使って保存されたすべての記録を一覧で確認できます。上部のフィルターチップでユーザー別に絞り込めます。不正なデータや誤入力があれば削除することもできます。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>表示内容</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>統計カード</td><td>ユーザー数・総記録数・平均値を自動集計</td></tr>
+          <tr><td>ユーザー絞り込み</td><td>名前ボタンで特定ユーザーのデータだけ表示</td></tr>
+          <tr><td>記録一覧テーブル</td><td>ユーザー名・日付・数値・メモ・登録日時</td></tr>
+          <tr><td>削除ボタン</td><td>誤入力や不正なデータを削除できます</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/data_records.png" alt="記録データタブ"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">記録データタブ（統計・フィルター・テーブル）</div>
+          <div class="ph-file">img/data_records.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag teal">TAB 2</span>レビュー — 評価の集計</h3>
+    <p>アプリを使った人からのレビュー（評価）を集計して表示します。このタブはアプリを作った<strong>生徒自身がエディターで確認します</strong>。自分のアプリへの評価をグラフや一覧で見ながら、改善や考察に活かすことができます。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>表示内容</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>総合平均スコア</td><td>▲=1・○=2・◎=3 の平均値を表示</td></tr>
+          <tr><td>項目別円グラフ</td><td>評価項目ごとの人数内訳（▲○◎）を視覚化</td></tr>
+          <tr><td>期間フィルター</td><td>日付範囲でレビューを絞り込み</td></tr>
+          <tr><td>レビュー一覧</td><td>ユーザー名・スコア・コメント・日時（新しい順）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/data_reviews.png" alt="レビュータブ"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">レビュータブ（円グラフ・コメント一覧）</div>
+          <div class="ph-file">img/data_reviews.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag teal">POINT</span>レビュータブのAI分析機能</h3>
+    <p>レビュータブの下部には「<strong>AIに分析してもらう</strong>」エリアがあります。生徒が自由に質問を入力すると、AIがレビューコメントや評価傾向をもとに回答します。</p>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">AI分析の活用例</div>
+        <ul>
+          <li>「どんな改善点が多いですか？」→ コメントを要約して回答</li>
+          <li>「使いやすさの評価が低い理由は何ですか？」→ コメントを分析して提案</li>
+          <li>授業の振り返りや発表のまとめ資料づくりに活用できます</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/data_review_ai.png" alt="レビューAI分析"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">レビュータブのAI分析エリア（質問入力と回答表示）</div>
+          <div class="ph-file">img/data_review_ai.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag purple">TAB 3</span>AIアドバイス — 利用ログ</h3>
+    <p>生徒がアプリのAIアドバイスパーツに送った質問と、AIの回答がすべて記録されています。アプリを作った<strong>生徒がエディターで確認します</strong>。どんな質問をしたか・どんな回答が返ってきたかを振り返ることができます。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>表示内容</th><th>説明</th></tr></thead>
+        <tbody>
+          <tr><td>パーツ別絞り込み</td><td>複数のAIアドバイスパーツがある場合、パーツごとに絞り込めます</td></tr>
+          <tr><td>利用ログ一覧</td><td>ユーザー名・送った質問・AIの回答・日時（新しい順）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/data_ailogs.png" alt="AIログタブ"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">AIアドバイスログタブ（質問・回答の一覧）</div>
+          <div class="ph-file">img/data_ailogs.png</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">先生がデータを確認したい場合</div>
+        <p>先生が各生徒のデータを確認したいときは、「生徒情報」シートのE列（公開URL）からアプリを開くか、生徒のパスワードでログインしてエディターのデータタブを確認してください。すべての記録・レビュー・AIログはスプレッドシートにもそのまま保存されています。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       6. SHEETS
+  ================================================================ -->
+  <div class="sc" id="sheets">
+    <div class="sc-header">
+      <div class="sc-num">6</div>
+      <div class="sc-title-wrap">
+        <h2>スプレッドシートのシート構成</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>システムのデータはすべて Google スプレッドシートに保存されます。シートの役割を理解しておくとトラブル対応がしやすくなります。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>シート名</th><th>内容</th><th>操作者</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>生徒情報</strong></td>
+            <td>名簿番号・パスワード・氏名・アプリ定義JSON・公開URL</td>
+            <td>先生が手動入力（D列以降は自動）</td>
+          </tr>
+          <tr>
+            <td><strong>ユーザー記録</strong></td>
+            <td>アプリで保存された記録（日付・数値・メモ）</td>
+            <td>システムが自動記録</td>
+          </tr>
+          <tr>
+            <td><strong>レビュー</strong></td>
+            <td>アプリへの評価（スコア・コメント）</td>
+            <td>システムが自動記録</td>
+          </tr>
+          <tr>
+            <td><strong>AIログ</strong></td>
+            <td>AIとのやり取り（質問・回答・パーツID）</td>
+            <td>システムが自動記録</td>
+          </tr>
+          <tr>
+            <td><strong>記録データ</strong></td>
+            <td>旧形式の記録データ（下位互換用）</td>
+            <td>システムが自動記録</td>
+          </tr>
+          <tr>
+            <td><strong>アプリ設定</strong></td>
+            <td>アプリ全体の設定値（将来の拡張用）</td>
+            <td>システムが自動管理</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout danger">
+      <div class="callout-ico">🚫</div>
+      <div class="callout-body">
+        <div class="callout-title">「生徒情報」シートのD列以降は触らないでください</div>
+        <p>D列（アプリ定義JSON）・E列（公開URL）はシステムが書き込む列です。手動で編集するとアプリが壊れる可能性があります。A〜C列のみ先生が操作してください。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       7. FAQ
+  ================================================================ -->
+  <div class="sc" id="faq">
+    <div class="sc-header">
+      <div class="sc-num">7</div>
+      <div class="sc-title-wrap">
+        <h2>よくある質問</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>生徒がログインできない</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>「生徒情報」シートのB列のパスワードと完全一致しているか確認（スペース・全角半角の違いに注意）</li>
+          <li>URL が最新のデプロイ URL かどうか確認</li>
+          <li>先生パスワードで試してみて、GAS 自体が動いているか確認</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>保存できない・エラーが出る</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>GAS スクリプトエディタで「実行」→「関数を実行」で <code>ensureSheets</code> を手動実行してシートを初期化する</li>
+          <li>スクリプトプロパティの設定内容（API キーなど）に余分なスペースがないか確認</li>
+          <li>GAS エディタのエラーログ（実行数メニュー）で詳細を確認する</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>AIアドバイスが動かない</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>スクリプトプロパティに <code>AZURE_OPENAI_ENDPOINT</code>・<code>AZURE_OPENAI_API_KEY</code>・<code>AZURE_OPENAI_DEPLOYMENT</code>（または <code>OPENAI_API_KEY</code>）が正しく設定されているか確認</li>
+          <li>Azure OpenAI のデプロイが有効になっているか Azure ポータルで確認</li>
+          <li>GAS エディタで <code>callAI</code> 関数を単体テスト実行してエラーを確認</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>グラフにデータが表示されない</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>グラフパーツの「グラフに使う入力フォーム」設定で、対応する入力フォームが選ばれているか確認</li>
+          <li>「記録を保存する」ボタンが同じページの入力フォームと正しく紐づいているか確認</li>
+          <li>保存操作後にページを再読み込み（画面切替）してみる</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>コードを変更したのに反映されない</h3>
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">新しいデプロイが必要です</div>
+        <p>GAS のコードを変更した後は、必ず「デプロイ」→「デプロイを管理」→「編集」→「新しいバージョン」で保存してください。URL は変わりません。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>スマホ・タブレットでも使えますか？</h3>
+    <p>エディター・アプリともにスマートフォン・タブレットのブラウザで動作します。エディターはパーツのプロパティ操作が多いため、PC での操作をおすすめします。完成したWEBアプリはスマートフォンでも快適に使える縦長レイアウトになっています。</p>
+
+    <h3><span class="tag rose">Q</span>生徒のアプリを先生が確認できますか？</h3>
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">スプレッドシートのD列から確認できます</div>
+        <p>「生徒情報」シートのD列にアプリ定義JSON が保存されています。E列の公開URLからアプリを直接開くこともできます。生徒がエディターで「保存」を押した時点で保存されます。</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  <p><strong>みんなのアプリラボ</strong> — 先生向けマニュアル</p>
+  <p style="margin-top:12px;font-size:12px;line-height:2;opacity:.6;">
+    本サービスは教育目的での利用を想定しています。サービスの利用によって生じる損害については開発者は責任を負いません。<br>
+    本マニュアルの内容は予告なく変更される場合があります。
+  </p>
+</footer>
+
+<script>
+  var prog = document.getElementById('prog');
+  window.addEventListener('scroll', function() {
+    var s = window.scrollY;
+    var t = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (t > 0 ? s / t * 100 : 0) + '%';
+  }, { passive: true });
+</script>
+</body>
+</html>

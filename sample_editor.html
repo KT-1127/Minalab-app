@@ -1,0 +1,1842 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>みんなのアプリラボ — サンプルエディター</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans JP', sans-serif; background: #f0f4ff; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* ヘッダー */
+        .topbar { background: #fff; border-bottom: 1px solid #d1d9f0; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .topbar-logo { display: flex; align-items: center; gap: 10px; }
+        .topbar-logo-icon { background: linear-gradient(135deg,#4f6ef7,#7c3aed); padding: 8px; border-radius: 12px; color: #fff; font-size: 16px; }
+        .topbar-title { font-weight: 700; font-size: 14px; }
+        .topbar-sub { font-size: 11px; color: #94a3b8; }
+        .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+        /* ボタン共通 */
+        .btn { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: opacity 0.15s; }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: #4f6ef7; color: #fff; }
+        .btn-active { background: #4f6ef7; color: #fff; }
+        .btn-inactive { background: #e8edf8; color: #64748b; }
+        .btn-green { background: #10b981; color: #fff; }
+        .btn-red-soft { background: #fee2e2; color: #ef4444; }
+
+        /* メイン */
+        main { flex: 1; display: flex; overflow: hidden; }
+
+        /* ページビュー */
+        #pages-view { flex: 1; display: flex; overflow: hidden; }
+        #data-view { flex: 1; flex-direction: column; padding: 24px; overflow-y: auto; gap: 16px; display: none; }
+        #data-view.active { display: flex; }
+        #data-section-records { display: flex; flex-direction: column; gap: 16px; }
+        #data-section-reviews { flex-direction: column; gap: 16px; }
+
+        /* サイドバー */
+        .sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid #d1d9f0; display: flex; flex-direction: column; padding: 16px; overflow-y: auto; gap: 16px; }
+        .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 8px; }
+
+        /* ページタブ */
+        .page-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+        .page-tab { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; }
+        .page-tab.active { background: #4f6ef7; color: #fff; }
+        .page-tab.inactive { background: #eef1ff; color: #4f6ef7; }
+
+        /* パーツパレット */
+        .parts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .part-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; background: #f8faff; border: 1px solid #d1d9f0; border-radius: 14px; cursor: pointer; gap: 4px; transition: all 0.15s; }
+        .part-btn:hover { background: #eef1ff; border-color: #4f6ef7; }
+        .part-btn i { font-size: 16px; color: #4f6ef7; }
+        .part-btn span { font-size: 11px; font-weight: 600; }
+        .part-btn.ai-btn { grid-column: span 2; background: #fdf8ff; border-color: #d8c4f0; }
+        .part-btn.ai-btn i { color: #8b5cf6; }
+
+        /* プロパティ */
+        .prop-section { border-top: 1px solid #d1d9f0; padding-top: 14px; display: none; }
+        .prop-section.open { display: block; }
+        .prop-label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: 500; }
+        .prop-input { width: 100%; background: #f8faff; border: 1px solid #d1d9f0; border-radius: 8px; padding: 6px 10px; font-size: 12px; color: #1e293b; outline: none; font-family: inherit; }
+        .prop-input:focus { border-color: #4f6ef7; }
+        .prop-group { display: flex; flex-direction: column; gap: 12px; }
+
+        /* スマホプレビューエリア */
+        .preview-area { flex: 1; background: #e8edf8; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 16px 24px 24px; overflow-y: auto; gap: 12px; }
+        .preview-zoom-bar { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #d1d9f0; border-radius: 20px; padding: 6px 14px; font-size: 11px; color: #64748b; font-weight: 600; user-select: none; }
+        .preview-zoom-bar input[type=range] { width: 100px; cursor: pointer; accent-color: #4f6ef7; }
+        .preview-scroll-area { flex: 1; display: flex; align-items: center; justify-content: center; overflow: visible; }
+        .phone-frame { width: 340px; height: 700px; background: #fff; border-radius: 44px; border: 8px solid #c8d0e8; box-shadow: 0 20px 60px rgba(79,110,247,0.15); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; transform-origin: top center; transition: transform 0.15s; }
+        .phone-status { background: #f8faff; color: #94a3b8; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; border-bottom: 1px solid #eef0f8; flex-shrink: 0; position: relative; }
+        .phone-notch { width: 72px; height: 12px; background: #d1d9f0; border-radius: 99px; position: absolute; left: 50%; transform: translateX(-50%); top: 10px; }
+        .phone-canvas { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #fff; }
+        .phone-home { height: 22px; background: #f8faff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .phone-home-bar { width: 120px; height: 4px; background: #d1d9f0; border-radius: 99px; }
+
+        /* プレビュー内コンポーネント */
+        .preview-comp { border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: border-color 0.12s; position: relative; }
+        .preview-comp:hover { border-color: #b3c2f7; }
+        .preview-comp:hover .del-btn { display: flex; }
+        .preview-comp:hover .move-btns { display: flex; }
+        .preview-comp.selected { border-color: #4f6ef7; background: #f0f4ff; }
+        .del-btn { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ef4444; color: #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: none; z-index: 10; }
+        .move-btns { position: absolute; top: -8px; left: -8px; display: none; flex-direction: column; gap: 2px; z-index: 10; }
+        .move-btn { width: 20px; height: 20px; background: #4f6ef7; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; cursor: pointer; border: none; }
+        .empty-canvas { flex: 1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; text-align: center; padding: 20px; line-height: 1.8; }
+        /* ページタブ並び替えボタン */
+        .page-tab-wrap { display: flex; align-items: center; gap: 3px; }
+        .page-order-btn { width: 16px; height: 16px; background: #e8edf8; color: #64748b; border: none; border-radius: 4px; cursor: pointer; font-size: 9px; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+
+        /* データタブ */
+        .card { background: #fff; border: 1px solid #d1d9f0; border-radius: 16px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th { background: #f0f4ff; color: #64748b; font-size: 11px; font-weight: 700; padding: 10px 12px; text-align: left; }
+        .data-table td { padding: 8px 12px; border-bottom: 1px solid #eef0f8; }
+        .data-table tr:hover td { background: #f8faff; }
+        .records-empty { padding: 40px; text-align: center; color: #94a3b8; font-size: 13px; line-height: 2; }
+        /* 統計カード */
+        .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+        .stat-card { background: #f8faff; border: 1px solid #d1d9f0; border-radius: 14px; padding: 16px; text-align: center; }
+        .stat-val { font-size: 24px; font-weight: 700; color: #4f6ef7; }
+        .stat-label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        /* 星 */
+        .star-display { color: #f59e0b; font-size: 13px; }
+        .star-display-gray { color: #d1d9f0; font-size: 13px; }
+        /* ユーザーフィルター */
+        .user-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .user-chip { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; }
+        .user-chip.active { background: #4f6ef7; color: #fff; }
+        .user-chip.inactive { background: #e8edf8; color: #64748b; }
+        /* データタブのセクションタブ */
+        .data-tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .data-tab-btn { padding: 7px 18px; border-radius: 20px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+        .data-tab-btn.active { background: #4f6ef7; color: #fff; }
+        .data-tab-btn.inactive { background: #e8edf8; color: #64748b; }
+
+        /* モーダル */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border: 1px solid #d1d9f0; border-radius: 16px; padding: 24px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 16px; }
+        .modal-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal-content { font-size: 13px; color: #475569; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+        /* デプロイモーダル専用 */
+        .deploy-box { max-width: 520px; }
+        .deploy-guide { background: #f0f4ff; border: 1px solid #d1d9f0; border-radius: 12px; padding: 14px; }
+        .deploy-guide-title { font-size: 11px; font-weight: 700; color: #4f6ef7; margin-bottom: 8px; }
+        .deploy-guide ol { font-size: 11px; color: #475569; line-height: 2.2; padding-left: 18px; }
+        .qr-area { text-align: center; padding: 16px; background: #f8faff; border: 1px solid #d1d9f0; border-radius: 14px; display: none; }
+        .qr-area img { width: 160px; height: 160px; border-radius: 10px; border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .qr-caption { font-size: 10px; color: #94a3b8; margin-top: 8px; line-height: 1.6; }
+        .url-row { display: flex; gap: 8px; margin-top: 6px; }
+        .url-input { flex: 1; background: #f8faff; border: 1px solid #d1d9f0; border-radius: 8px; padding: 8px 12px; font-size: 12px; outline: none; font-family: inherit; }
+        .url-input:focus { border-color: #4f6ef7; }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="topbar">
+        <div class="topbar-logo">
+            <div class="topbar-logo-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div>
+                <div class="topbar-title">みんなのアプリラボ</div>
+                <div class="topbar-sub" id="student-info-label">WEBアプリを作ろう</div>
+            </div>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #fde68a;color:#b45309;font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;display:flex;align-items:center;gap:6px;">
+            <i class="fa-solid fa-flask"></i> サンプルモード — データは保存されません
+        </div>
+        <div class="topbar-actions">
+            <button class="btn" onclick="openTemplateModal()" style="background:#f5f0ff;color:#7c3aed;border:1px solid #d8c4f0;">
+                <i class="fa-solid fa-layer-group"></i> テンプレート
+            </button>
+            <button class="btn btn-active" id="tab-pages-btn" onclick="switchTab('pages')">
+                <i class="fa-solid fa-mobile-screen-button"></i> 画面を作る
+            </button>
+            <button class="btn btn-inactive" id="tab-data-btn" onclick="switchTab('data')">
+                <i class="fa-solid fa-chart-line"></i> データ・グラフ
+            </button>
+            <!-- 保存ボタン -->
+            <button class="btn" id="save-btn" onclick="showSampleNotice()" style="background:#f0f4ff; color:#4f6ef7; border:1px solid #d1d9f0;">
+                <i class="fa-solid fa-floppy-disk"></i> 保存
+            </button>
+            <!-- プレビューボタン -->
+            <button class="btn" id="preview-btn" onclick="openSamplePreview()" style="background:#f0f4ff;color:#4f6ef7;border:1px solid #d1d9f0;">
+                <i class="fa-solid fa-play"></i> プレビュー
+            </button>
+            <!-- 公開ページを開くボタン -->
+            <button class="btn btn-green" id="open-app-btn" onclick="showSampleNotice()">
+                <i class="fa-solid fa-rocket"></i> 保存して公開
+            </button>
+        </div>
+    </header>
+
+    <!-- メイン -->
+    <main>
+        <!-- 画面タブ -->
+        <div id="pages-view">
+            <!-- サイドバー -->
+            <div class="sidebar">
+                <!-- ページ選択 -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="section-label" style="margin-bottom:0;">アプリの画面</span>
+                        <button class="btn btn-inactive" style="padding:3px 10px; font-size:11px;" onclick="addPage()">
+                            <i class="fa-solid fa-plus"></i> 新規画面
+                        </button>
+                    </div>
+                    <div class="page-tabs" id="page-tabs"></div>
+                </div>
+
+                <!-- パーツパレット -->
+                <div style="border-top:1px solid #d1d9f0; padding-top:14px;">
+                    <div class="section-label">
+                        パーツを追加 — <span id="active-page-name-label" style="color:#4f6ef7;"></span>
+                    </div>
+                    <div class="parts-grid">
+                        <button class="part-btn" onclick="addComponent('header')"><i class="fa-solid fa-heading"></i><span>見出し</span></button>
+                        <button class="part-btn" onclick="addComponent('text')"><i class="fa-solid fa-align-left"></i><span>テキスト</span></button>
+                        <button class="part-btn" onclick="addComponent('button')"><i class="fa-solid fa-square"></i><span>ボタン</span></button>
+                        <button class="part-btn" onclick="addComponent('image')"><i class="fa-solid fa-image"></i><span>画像カード</span></button>
+                        <button class="part-btn" onclick="addComponent('input')"><i class="fa-solid fa-keyboard"></i><span>入力フォーム</span></button>
+                        <button class="part-btn" onclick="addComponent('chart')"><i class="fa-solid fa-chart-column"></i><span>グラフ表示</span></button>
+                        <button class="part-btn" onclick="addComponent('memoList')"><i class="fa-solid fa-list"></i><span>メモ一覧</span></button>
+                        <button class="part-btn ai-btn" onclick="addComponent('ai')"><i class="fa-solid fa-robot"></i><span>AIアドバイス</span></button>
+                        <button class="part-btn ai-btn" style="background:#fff7ed;border-color:#fed7aa;" onclick="addComponent('review')"><i class="fa-solid fa-star" style="color:#ea580c;"></i><span style="color:#ea580c;">レビュー</span></button>
+                    </div>
+                </div>
+
+                <!-- プロパティエディター -->
+                <div class="prop-section" id="prop-section">
+                    <div class="section-label" style="color:#4f6ef7;"><i class="fa-solid fa-sliders"></i> パーツの設定</div>
+                    <div class="prop-group" id="property-form"></div>
+                </div>
+            </div>
+
+            <!-- スマホプレビュー -->
+            <div class="preview-area">
+                <!-- ズームバー -->
+                <div class="preview-zoom-bar">
+                    <i class="fa-solid fa-magnifying-glass-minus" style="color:#94a3b8;"></i>
+                    <input type="range" id="preview-zoom-slider" min="50" max="120" value="85"
+                        oninput="applyPreviewZoom(this.value)">
+                    <i class="fa-solid fa-magnifying-glass-plus" style="color:#94a3b8;"></i>
+                    <span id="preview-zoom-label" style="min-width:34px;">85%</span>
+                </div>
+                <!-- スクロール可能な中央エリア -->
+                <div class="preview-scroll-area">
+                    <div class="phone-frame" id="phone-frame-el">
+                        <div class="phone-status">
+                            <span>9:41</span>
+                            <div class="phone-notch"></div>
+                            <div style="display:flex; gap:6px;">
+                                <i class="fa-solid fa-signal"></i>
+                                <i class="fa-solid fa-wifi"></i>
+                                <i class="fa-solid fa-battery-full"></i>
+                            </div>
+                        </div>
+                        <div class="phone-canvas" id="phone-canvas"></div>
+                        <div class="phone-home"><div class="phone-home-bar"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- データタブ -->
+        <div id="data-view">
+            <!-- セクションタブ -->
+            <div class="data-tab-row">
+                <button class="data-tab-btn active" id="dtab-records" onclick="switchDataTab('records')">
+                    <i class="fa-solid fa-chart-column"></i> 記録データ
+                </button>
+                <button class="data-tab-btn inactive" id="dtab-reviews" onclick="switchDataTab('reviews')">
+                    <i class="fa-solid fa-star"></i> レビュー
+                </button>
+                <button class="data-tab-btn inactive" id="dtab-ailogs" onclick="switchDataTab('ailogs')">
+                    <i class="fa-solid fa-robot"></i> AIアドバイス
+                </button>
+            </div>
+
+            <!-- 記録データセクション -->
+            <div id="data-section-records">
+                <!-- 統計サマリー -->
+                <div class="stat-grid" id="stats-grid">
+                    <div class="stat-card"><div class="stat-val" id="stat-users">-</div><div class="stat-label">ユーザー数</div></div>
+                    <div class="stat-card"><div class="stat-val" id="stat-total">-</div><div class="stat-label">総記録数</div></div>
+                    <div class="stat-card"><div class="stat-val" id="stat-avg">-</div><div class="stat-label">平均値</div></div>
+                </div>
+
+                <!-- ユーザーフィルター -->
+                <div class="card" style="padding:16px;">
+                    <div style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:10px;">ユーザーで絞り込む</div>
+                    <div class="user-filter" id="user-filter-chips">
+                        <button class="user-chip active" onclick="filterByUser('__all__')">全員</button>
+                    </div>
+                </div>
+
+                <!-- 記録テーブル -->
+                <div class="card" style="overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid #d1d9f0;">
+                        <div style="font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-database" style="color:#0ea5e9;"></i> ユーザー記録一覧
+                        </div>
+                        <button class="btn" onclick="reloadDataTab()" style="background:#f0f4ff;color:#4f6ef7;border:1px solid #d1d9f0;">
+                            <i class="fa-solid fa-rotate-right"></i> 更新
+                        </button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ユーザー名</th>
+                                    <th>日付</th>
+                                    <th>数値</th>
+                                    <th>メモ</th>
+                                    <th>登録日時</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-tbody"></tbody>
+                        </table>
+                        <div class="records-empty" id="records-empty">
+                            <i class="fa-solid fa-inbox" style="font-size:24px;display:block;margin-bottom:8px;color:#c7d2f0;"></i>
+                            まだデータがありません。<br>ユーザーがアプリで入力するとここに表示されます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- レビューセクション -->
+            <div id="data-section-reviews" style="display:none;">
+                <!-- レビュー統計 -->
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="stat-val" id="rv-avg">-</div><div class="stat-label">総合平均スコア<br>（▲=1 ○=2 ◎=3の平均）</div></div>
+                    <div class="stat-card"><div class="stat-val" id="rv-count">-</div><div class="stat-label">レビュー数</div></div>
+                    <div class="stat-card" style="grid-column:span 1;">
+                        <div id="rv-stars" style="font-size:18px;">★★★★★</div>
+                        <div class="stat-label">総合評価</div>
+                    </div>
+                </div>
+
+                <!-- 期間フィルター -->
+                <div class="card" style="padding:14px 16px;">
+                    <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:10px;">期間で絞り込む（登録日時）</div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <label style="font-size:12px;color:#475569;">開始</label>
+                        <input type="date" id="rv-date-from" class="prop-input" style="width:150px;" onchange="applyReviewFilter()">
+                        <label style="font-size:12px;color:#475569;">〜 終了</label>
+                        <input type="date" id="rv-date-to" class="prop-input" style="width:150px;" onchange="applyReviewFilter()">
+                        <button class="btn" onclick="clearReviewFilter()" style="background:#e8edf8;color:#64748b;border:none;font-size:11px;">クリア</button>
+                    </div>
+                </div>
+
+                <!-- 項目別平均 円グラフ -->
+                <div class="card" style="overflow:hidden;display:none;" id="rv-item-charts-card">
+                    <div style="padding:14px 20px; border-bottom:1px solid #d1d9f0;">
+                        <div style="font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-chart-pie" style="color:#ea580c;"></i> 項目別平均スコア
+                        </div>
+                    </div>
+                    <div id="rv-item-charts" style="padding:16px; display:flex; flex-wrap:wrap; gap:20px; justify-content:center;">
+                    </div>
+                </div>
+
+                <!-- AI分析 -->
+                <div class="card" style="overflow:hidden;">
+                    <div style="padding:14px 20px; border-bottom:1px solid #d1d9f0; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-brain" style="color:#7c3aed;"></i>
+                        <span style="font-size:13px; font-weight:700;">AI分析 — データについて質問する</span>
+                    </div>
+                    <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+                        <div style="font-size:11px;color:#94a3b8;line-height:1.7;">レビュー・コメント・AIアドバイス利用状況を踏まえてAIが回答します。<br>上位プロンプトは教師コンソールで設定できます。</div>
+                        <textarea id="ai-analysis-input" rows="3" placeholder="例: どのような改善点がコメントに多いですか？" style="width:100%;background:#f8faff;border:1px solid #d1d9f0;border-radius:10px;padding:10px 12px;font-size:12px;color:#1e293b;resize:vertical;outline:none;font-family:inherit;"></textarea>
+                        <button onclick="submitAiAnalysis()" id="ai-analysis-btn" style="padding:10px 20px;background:linear-gradient(135deg,#7c3aed,#4f6ef7);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                            <i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>AIに分析してもらう
+                        </button>
+                        <div id="ai-analysis-result" style="display:none;padding:14px;background:#f5f0ff;border:1px solid #d8b4fe;border-radius:10px;font-size:12px;color:#1e293b;line-height:1.8;white-space:pre-wrap;"></div>
+                    </div>
+                </div>
+
+                <!-- レビュー一覧 -->
+                <div class="card" style="overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid #d1d9f0;">
+                        <div style="font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-star" style="color:#f59e0b;"></i> レビュー一覧（新しい順）
+                        </div>
+                        <button class="btn" onclick="reloadReviews()" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;">
+                            <i class="fa-solid fa-rotate-right"></i> 更新
+                        </button>
+                    </div>
+                    <div id="reviews-list" style="padding:8px;">
+                        <div class="records-empty">
+                            <i class="fa-solid fa-star" style="font-size:24px;display:block;margin-bottom:8px;color:#fde68a;"></i>
+                            まだレビューがありません。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AIアドバイスセクション -->
+            <div id="data-section-ailogs" style="display:none;flex-direction:column;gap:16px;">
+                <!-- コンポーネント別ボタン -->
+                <div class="card" style="padding:16px;">
+                    <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:12px;">AIアドバイスパーツ別に絞り込む</div>
+                    <div id="ailog-comp-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                        <button class="user-chip active" onclick="filterAiLogs('__all__')">すべて</button>
+                    </div>
+                </div>
+                <!-- ログ一覧 -->
+                <div class="card" style="overflow:hidden;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #d1d9f0;">
+                        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-robot" style="color:#7c3aed;"></i> AIアドバイス利用ログ（新しい順）
+                        </div>
+                        <button class="btn" onclick="reloadAiLogs()" style="background:#f5f0ff;color:#7c3aed;border:1px solid #d8b4fe;">
+                            <i class="fa-solid fa-rotate-right"></i> 更新
+                        </button>
+                    </div>
+                    <div id="ailog-list" style="padding:8px;">
+                        <div class="records-empty">
+                            <i class="fa-solid fa-robot" style="font-size:24px;display:block;margin-bottom:8px;color:#d8b4fe;"></i>
+                            まだAIアドバイスの利用記録がありません。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- テンプレート選択モーダル -->
+    <div class="modal-overlay" id="template-modal" style="align-items:flex-start;padding:20px;overflow-y:auto;">
+        <div class="modal-box" style="max-width:600px;margin:auto;">
+            <div class="modal-title">
+                <i class="fa-solid fa-layer-group" style="color:#4f6ef7;"></i>
+                テンプレートを選んでスタート
+            </div>
+            <div class="modal-content">どれかを選んで編集するか、白紙から始めましょう。</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;" id="template-grid">
+                <!-- JSで生成 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeTemplateModal()" style="background:#e8edf8;color:#64748b;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知モーダル -->
+    <div class="modal-overlay" id="notify-modal">
+        <div class="modal-box" style="max-width:360px;">
+            <div class="modal-title"><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> 通知</div>
+            <div class="modal-content" id="notify-msg"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeNotify()">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    // =====================================================================
+    // GAS環境対応：バックティック・テンプレートリテラル不使用
+    // =====================================================================
+
+    // デフォルトのサンプルアプリ定義（ログイン情報が無い場合のフォールバック）
+    var DEFAULT_APP_PAGES = {
+        'home': {
+            name: 'ホーム画面',
+            components: [
+                { id: 'c1', type: 'header', text: 'マイ健康アプリ', color: 'indigo' },
+                { id: 'c2', type: 'text', text: '日々の記録をつけたり、グラフで確認できるアプリです。', color: 'slate' },
+                { id: 'c3', type: 'chart' },
+                { id: 'c4', type: 'button', text: '記録・入力画面へ', actionType: 'navigate', actionTarget: 'input_page', color: 'indigo' }
+            ]
+        },
+        'input_page': {
+            name: '記録・入力画面',
+            components: [
+                { id: 'c5', type: 'header', text: '記録の入力', color: 'emerald' },
+                { id: 'c7', type: 'input', placeholder: '日付を入力（例: 8/12）', inputKey: 'date' },
+                { id: 'c8', type: 'input', placeholder: '数値を入力（例: 30）', inputKey: 'value' },
+                { id: 'c9', type: 'button', text: '記録を保存する', actionType: 'saveRecord', color: 'emerald' },
+                { id: 'c10', type: 'button', text: 'ホームに戻る', actionType: 'navigate', actionTarget: 'home', color: 'slate' }
+            ]
+        }
+    };
+
+    var appPages = DEFAULT_APP_PAGES;
+
+    // GASテンプレートから生徒番号を直接受け取る（URLパラメータはiframe内で取れないため）
+    var studentNo = 'sample';
+    var studentName = '';
+
+    var activePageId = Object.keys(appPages)[0] || 'home';
+    var selectedCompId = null;
+    var recordsData = [];
+
+    // サンプルモード：テンプレート選択モーダルを開く
+    function loadStudentData() {
+        openTemplateModal();
+    }
+
+    // =====================================================================
+    // タブ切り替え
+    // =====================================================================
+    function switchTab(tab) {
+        var pv = document.getElementById('pages-view');
+        var dv = document.getElementById('data-view');
+        var pb = document.getElementById('tab-pages-btn');
+        var db = document.getElementById('tab-data-btn');
+
+        if (tab === 'pages') {
+            pv.style.display = 'flex';
+            dv.classList.remove('active');
+            pb.className = 'btn btn-active';
+            db.className = 'btn btn-inactive';
+            renderEditor();
+        } else {
+            pv.style.display = 'none';
+            dv.classList.add('active');
+            pb.className = 'btn btn-inactive';
+            db.className = 'btn btn-active';
+            // データタブ初回ロード
+            reloadDataTab();
+        }
+    }
+
+    // =====================================================================
+    // ページ操作
+    // =====================================================================
+    function selectPage(pageId) {
+        activePageId = pageId;
+        selectedCompId = null;
+        document.getElementById('prop-section').className = 'prop-section';
+        renderEditor();
+    }
+
+    function addPage() {
+        var newKey = 'page_' + Date.now();
+        var pageNum = Object.keys(appPages).length + 1;
+        appPages[newKey] = {
+            name: '画面' + pageNum,
+            components: [
+                { id: 'ch_' + Date.now(), type: 'header', text: '画面' + pageNum, color: 'indigo' }
+            ]
+        };
+        selectPage(newKey);
+    }
+
+    // =====================================================================
+    // パーツ操作
+    // =====================================================================
+    function addComponent(type) {
+        var newId = 'c_' + Date.now();
+        var comp = { id: newId, type: type };
+
+        if (type === 'header') {
+            comp.text = '新しい見出し'; comp.color = 'indigo'; comp.textColor = '#4f6ef7'; comp.fontSize = 14; comp.bold = true; comp.underline = false;
+        } else if (type === 'text') {
+            comp.text = 'ここにテキストを入力します。'; comp.color = 'slate'; comp.textColor = '#475569'; comp.fontSize = 12; comp.bold = false; comp.underline = false;
+        } else if (type === 'button') {
+            comp.text = 'ボタン'; comp.color = 'indigo';
+            comp.actionType = 'alert'; comp.actionValue = 'ボタンが押されました！';
+            comp.actionTarget = Object.keys(appPages)[0];
+        } else if (type === 'image') {
+            comp.title = 'カードタイトル'; comp.desc = 'カードの説明文';
+            comp.img = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80';
+        } else if (type === 'input') {
+            comp.placeholder = '文字を入力してください...'; comp.inputKey = '';
+        } else if (type === 'ai') {
+            comp.label = 'AIアドバイス';
+            comp.systemPrompt = 'あなたは中学生向けの優しい運動アドバイザーです。ユーザーが入力した運動内容に対して、励ましと具体的なアドバイスを100字以内で返してください。医療的な診断はしないでください。';
+            comp.userInputLabel = '今日の運動内容を入力してください';
+            comp.btnText = 'AIにアドバイスをもらう';
+        } else if (type === 'review') {
+            comp.label = 'アプリの評価';
+            comp.reviewItems = ['役立ち度', '使いやすさ'];
+        } else if (type === 'memoList') {
+            comp.listTitle = 'メモ・コメント一覧';
+        }
+
+        appPages[activePageId].components.push(comp);
+        selectedCompId = newId;
+        renderEditor();
+        renderPropertyEditor();
+    }
+
+    function removeComponent(id, ev) {
+        ev.stopPropagation();
+        var comps = appPages[activePageId].components;
+        appPages[activePageId].components = comps.filter(function(c) { return c.id !== id; });
+        if (selectedCompId === id) {
+            selectedCompId = null;
+            document.getElementById('prop-section').className = 'prop-section';
+        }
+        renderEditor();
+    }
+
+    function selectComp(id) {
+        selectedCompId = id;
+        renderEditor();
+        renderPropertyEditor();
+    }
+
+    function updateProp(key, val) {
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === selectedCompId) {
+                comps[i][key] = val;
+                renderPreview();
+                break;
+            }
+        }
+    }
+
+    // =====================================================================
+    // 描画
+    // =====================================================================
+    function renderEditor() {
+        renderPageTabs();
+        renderPreview();
+    }
+
+    function renderPageTabs() {
+        var container = document.getElementById('page-tabs');
+        container.innerHTML = '';
+        var keys = Object.keys(appPages);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var wrap = document.createElement('div');
+            wrap.className = 'page-tab-wrap';
+
+            // 並び替えボタン（↑↓）
+            var upBtn = document.createElement('button');
+            upBtn.className = 'page-order-btn';
+            upBtn.innerHTML = '&#9650;';
+            upBtn.title = '上へ';
+            upBtn.disabled = (i === 0);
+            (function(k) { upBtn.onclick = function(e) { e.stopPropagation(); movePageOrder(k, -1); }; })(key);
+
+            var downBtn = document.createElement('button');
+            downBtn.className = 'page-order-btn';
+            downBtn.innerHTML = '&#9660;';
+            downBtn.title = '下へ';
+            downBtn.disabled = (i === keys.length - 1);
+            (function(k) { downBtn.onclick = function(e) { e.stopPropagation(); movePageOrder(k, 1); }; })(key);
+
+            var btn = document.createElement('button');
+            btn.className = 'page-tab ' + (key === activePageId ? 'active' : 'inactive');
+            btn.textContent = appPages[key].name;
+            (function(k) { btn.onclick = function() { selectPage(k); }; })(key);
+
+            wrap.appendChild(upBtn);
+            wrap.appendChild(btn);
+            wrap.appendChild(downBtn);
+            container.appendChild(wrap);
+        }
+        var lbl = document.getElementById('active-page-name-label');
+        if (lbl && appPages[activePageId]) lbl.textContent = appPages[activePageId].name;
+    }
+
+    // ページの並び順を変更（appPagesのキー順を入れ替え）
+    function movePageOrder(pageId, dir) {
+        var keys = Object.keys(appPages);
+        var idx = -1;
+        for (var i = 0; i < keys.length; i++) { if (keys[i] === pageId) { idx = i; break; } }
+        if (idx < 0) return;
+        var newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= keys.length) return;
+        // キーの順序を入れ替えて新しいオブジェクトを再構築
+        var tmp = keys[idx]; keys[idx] = keys[newIdx]; keys[newIdx] = tmp;
+        var newPages = {};
+        for (var j = 0; j < keys.length; j++) { newPages[keys[j]] = appPages[keys[j]]; }
+        appPages = newPages;
+        renderEditor();
+    }
+
+    function renderPreview() {
+        var canvas = document.getElementById('phone-canvas');
+        canvas.innerHTML = '';
+        var page = appPages[activePageId];
+        if (!page) return;
+        var comps = page.components;
+
+        if (comps.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'empty-canvas';
+            empty.innerHTML = 'パーツがありません。<br>左側からパーツを追加してください。';
+            canvas.appendChild(empty);
+            return;
+        }
+
+        for (var i = 0; i < comps.length; i++) {
+            var comp = comps[i];
+            var el = document.createElement('div');
+            el.className = 'preview-comp' + (comp.id === selectedCompId ? ' selected' : '');
+            (function(c) { el.onclick = function() { selectComp(c.id); }; })(comp);
+            var moveBtns = '<div class="move-btns">'
+                + '<button class="move-btn" onclick="moveComp(\'' + comp.id + '\',-1,event)" title="上へ"><i class="fa-solid fa-chevron-up"></i></button>'
+                + '<button class="move-btn" onclick="moveComp(\'' + comp.id + '\',1,event)" title="下へ"><i class="fa-solid fa-chevron-down"></i></button>'
+                + '</div>';
+            el.innerHTML = buildCompHtml(comp)
+                + '<button class="del-btn" onclick="removeComponent(\'' + comp.id + '\',event)"><i class="fa-solid fa-xmark"></i></button>'
+                + moveBtns;
+            canvas.appendChild(el);
+        }
+    }
+
+    // パーツの上下移動
+    function moveComp(id, dir, ev) {
+        ev.stopPropagation();
+        var comps = appPages[activePageId].components;
+        var idx = -1;
+        for (var i = 0; i < comps.length; i++) { if (comps[i].id === id) { idx = i; break; } }
+        if (idx < 0) return;
+        var newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= comps.length) return;
+        var tmp = comps[idx];
+        comps[idx] = comps[newIdx];
+        comps[newIdx] = tmp;
+        renderPreview();
+    }
+
+    function buildCompHtml(comp) {
+        var colorMap = { indigo: '#4f6ef7', emerald: '#10b981', rose: '#f43f5e', slate: '#64748b' };
+
+        if (comp.type === 'header') {
+            var hColor = comp.textColor || colorMap[comp.color] || colorMap.indigo;
+            var hSize = (comp.fontSize || 14) + 'px';
+            var hWeight = comp.bold !== false ? '700' : '400';
+            var hDecor = comp.underline ? 'underline' : 'none';
+            return '<div style="font-weight:' + hWeight + ';font-size:' + hSize + ';color:' + hColor + ';text-decoration:' + hDecor + ';padding:6px 8px;display:flex;justify-content:space-between;align-items:flex-start;">'
+                + '<span style="white-space:pre-wrap;word-break:break-all;">' + esc(comp.text) + '</span>'
+                + '<span style="font-size:9px;background:#f0f4ff;color:#4f6ef7;padding:2px 6px;border-radius:6px;flex-shrink:0;margin-left:4px;">見出し</span></div>';
+        }
+
+        if (comp.type === 'text') {
+            var tColor = comp.textColor || (comp.color === 'slate' ? '#475569' : (colorMap[comp.color] || '#475569'));
+            var tSize = (comp.fontSize || 12) + 'px';
+            var tWeight = comp.bold ? '700' : '400';
+            var tDecor = comp.underline ? 'underline' : 'none';
+            return '<p style="font-size:' + tSize + ';color:' + tColor + ';font-weight:' + tWeight + ';text-decoration:' + tDecor + ';padding:4px 8px;line-height:1.7;white-space:pre-wrap;word-break:break-all;">' + esc(comp.text) + '</p>';
+        }
+
+        if (comp.type === 'button') {
+            var bg = colorMap[comp.color] || colorMap.indigo;
+            return '<button style="width:100%;padding:10px;background:' + bg + ';color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:default;pointer-events:none;">'
+                + esc(comp.text) + '</button>';
+        }
+
+        if (comp.type === 'image') {
+            return '<div style="padding:4px;pointer-events:none;">'
+                + '<div style="height:110px;border-radius:10px;overflow:hidden;background:#f0f4ff;">'
+                + '<img src="' + escAttr(comp.img) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'"></div>'
+                + '<div style="font-weight:700;font-size:12px;color:#1e293b;margin-top:6px;padding:0 4px;">' + esc(comp.title) + '</div>'
+                + '<div style="font-size:11px;color:#94a3b8;padding:0 4px;">' + esc(comp.desc) + '</div></div>';
+        }
+
+        if (comp.type === 'input') {
+            return '<div style="padding:2px 4px;">'
+                + '<input type="text" placeholder="' + escAttr(comp.placeholder) + '"'
+                + ' style="width:100%;background:#f8faff;border:1.5px solid #d1d9f0;border-radius:10px;padding:9px 12px;font-size:12px;color:#1e293b;box-sizing:border-box;outline:none;font-family:inherit;pointer-events:none;"'
+                + '></div>';
+        }
+
+        if (comp.type === 'ai') {
+            return '<div style="padding:4px;display:flex;flex-direction:column;gap:7px;pointer-events:none;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+                + '<span style="font-size:11px;font-weight:700;color:#7c3aed;"><i class="fa-solid fa-robot" style="margin-right:4px;"></i>' + esc(comp.label) + '</span>'
+                + '<span style="font-size:9px;background:#f5f0ff;color:#7c3aed;border:1px solid #d8b4fe;padding:2px 7px;border-radius:6px;">AI</span></div>'
+                + '<label style="font-size:10px;color:#94a3b8;">' + esc(comp.userInputLabel) + '</label>'
+                + '<textarea rows="2" placeholder="' + escAttr(comp.inputPlaceholder || '入力してください...') + '"'
+                + ' style="width:100%;background:#f8faff;border:1.5px solid #d1d9f0;border-radius:9px;padding:8px 10px;font-size:11px;color:#1e293b;resize:none;box-sizing:border-box;outline:none;font-family:inherit;pointer-events:none;"></textarea>'
+                + '<button style="width:100%;padding:9px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:11px;font-weight:600;cursor:default;pointer-events:none;">'
+                + '<i class="fa-solid fa-paper-plane" style="margin-right:4px;"></i>' + esc(comp.btnText) + '</button>'
+                + '</div>';
+        }
+
+        if (comp.type === 'review') {
+            var rvItems = (comp.reviewItems && comp.reviewItems.length > 0) ? comp.reviewItems : [];
+            var rvItemsPreview = '';
+            if (rvItems.length === 0) {
+                rvItemsPreview = '<div style="font-size:10px;color:#92400e;opacity:0.6;">（項目未設定）</div>';
+            } else {
+                for (var ri2 = 0; ri2 < rvItems.length; ri2++) {
+                    rvItemsPreview += '<div style="font-size:10px;color:#92400e;padding:1px 0;">'
+                        + '<i class="fa-solid fa-circle-dot" style="font-size:8px;margin-right:4px;"></i>' + esc(rvItems[ri2]) + '</div>';
+                }
+            }
+            return '<div style="padding:12px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:14px;pointer-events:none;">'
+                + '<div style="font-size:11px;font-weight:700;color:#ea580c;margin-bottom:6px;display:flex;align-items:center;gap:4px;">'
+                + '<i class="fa-solid fa-star"></i>' + esc(comp.label || 'アプリの評価')
+                + '<span style="margin-left:auto;font-size:9px;background:#fed7aa;color:#92400e;padding:2px 6px;border-radius:6px;">' + rvItems.length + '項目</span></div>'
+                + rvItemsPreview
+                + '<div style="font-size:9px;color:#92400e;margin-top:6px;opacity:0.7;">タップで評価モーダルが開きます</div>'
+                + '</div>';
+        }
+
+        if (comp.type === 'chart') {
+            var chartDisplayTitle = comp.chartTitle || '記録グラフ';
+            var chartType = comp.chartType || 'bar';
+            var typeIcon = chartType === 'line' ? 'fa-chart-line' : (chartType === 'pie' ? 'fa-chart-pie' : 'fa-chart-column');
+            return '<div style="padding:12px;background:#f8faff;border:1.5px dashed #d1d9f0;border-radius:12px;text-align:center;color:#94a3b8;font-size:11px;line-height:1.7;">'
+                + '<i class="fa-solid ' + typeIcon + '" style="font-size:20px;margin-bottom:6px;display:block;color:#c7d2f0;"></i>'
+                + esc(chartDisplayTitle)
+                + '<br><span style="font-size:10px;">種類: ' + (chartType === 'line' ? '折れ線' : chartType === 'pie' ? '円グラフ' : '棒グラフ') + '</span></div>';
+        }
+
+        if (comp.type === 'memoList') {
+            return '<div style="padding:10px 8px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;">'
+                + '<div style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:6px;display:flex;align-items:center;gap:4px;">'
+                + '<i class="fa-solid fa-list"></i>' + esc(comp.listTitle || 'メモ・コメント一覧') + '</div>'
+                + '<div style="font-size:10px;color:#166534;">日付順でメモ・コメントを表示します。</div></div>';
+        }
+
+        return '';
+    }
+
+    // =====================================================================
+    // プロパティエディター
+    // =====================================================================
+    function renderPropertyEditor() {
+        var ps = document.getElementById('prop-section');
+        var form = document.getElementById('property-form');
+
+        if (!selectedCompId) { ps.className = 'prop-section'; return; }
+
+        var comp = null;
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === selectedCompId) { comp = comps[i]; break; }
+        }
+        if (!comp) { ps.className = 'prop-section'; return; }
+
+        ps.className = 'prop-section open';
+
+        var html = '<div>'
+            + '<label class="prop-label">このページの名前</label>'
+            + '<input class="prop-input" type="text" value="' + escAttr(appPages[activePageId].name) + '"'
+            + ' oninput="appPages[activePageId].name=this.value; renderPageTabs();">'
+            + '</div>';
+
+        if (comp.type === 'header' || comp.type === 'text') {
+            var defaultColor = comp.type === 'header' ? '#4f6ef7' : '#475569';
+            var curTextColor = comp.textColor || defaultColor;
+            var curFontSize = comp.fontSize || (comp.type === 'header' ? 14 : 12);
+            var isBold = (comp.type === 'header') ? (comp.bold !== false) : !!comp.bold;
+            var isUnderline = !!comp.underline;
+            html += '<div><label class="prop-label">表示テキスト</label>'
+                + '<textarea class="prop-input" rows="3" style="resize:vertical;line-height:1.5;" oninput="updateProp(\'text\',this.value)">' + esc(comp.text) + '</textarea>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:2px;">Enterキーで改行できます</p></div>'
+                + '<div><label class="prop-label">文字色</label>'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<input type="color" value="' + escAttr(curTextColor) + '" oninput="updateProp(\'textColor\',this.value)"'
+                + ' style="width:40px;height:32px;border:1.5px solid #d1d9f0;border-radius:8px;padding:2px;cursor:pointer;background:#f8faff;">'
+                + '<span style="font-size:11px;color:#94a3b8;" id="textcolor-preview">' + escAttr(curTextColor) + '</span>'
+                + '</div></div>'
+                + '<div><label class="prop-label">文字サイズ（px）</label>'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<input type="range" min="10" max="28" value="' + curFontSize + '" oninput="updateProp(\'fontSize\',parseInt(this.value));document.getElementById(\'fontsize-val\').textContent=this.value+\'px\';"'
+                + ' style="flex:1;cursor:pointer;">'
+                + '<span id="fontsize-val" style="font-size:11px;color:#1e293b;font-weight:700;min-width:32px;">' + curFontSize + 'px</span>'
+                + '</div></div>'
+                + '<div><label class="prop-label">スタイル</label>'
+                + '<div style="display:flex;gap:8px;">'
+                + '<button onclick="toggleBold()" id="btn-bold"'
+                + ' style="flex:1;padding:7px;border-radius:8px;border:1.5px solid ' + (isBold ? '#4f6ef7' : '#d1d9f0') + ';background:' + (isBold ? '#eef1ff' : '#f8faff') + ';color:' + (isBold ? '#4f6ef7' : '#94a3b8') + ';font-size:12px;font-weight:700;cursor:pointer;">'
+                + '<b>B</b> 太字</button>'
+                + '<button onclick="toggleUnderline()" id="btn-underline"'
+                + ' style="flex:1;padding:7px;border-radius:8px;border:1.5px solid ' + (isUnderline ? '#4f6ef7' : '#d1d9f0') + ';background:' + (isUnderline ? '#eef1ff' : '#f8faff') + ';color:' + (isUnderline ? '#4f6ef7' : '#94a3b8') + ';font-size:12px;cursor:pointer;">'
+                + '<u>U</u> 下線</button>'
+                + '</div></div>';
+
+        } else if (comp.type === 'button') {
+            var pageOpts = '';
+            var keys = Object.keys(appPages);
+            for (var i = 0; i < keys.length; i++) {
+                pageOpts += '<option value="' + keys[i] + '"' + (comp.actionTarget === keys[i] ? ' selected' : '') + '>' + escAttr(appPages[keys[i]].name) + '</option>';
+            }
+            html += '<div><label class="prop-label">ボタンの文字</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.text) + '" oninput="updateProp(\'text\',this.value)"></div>'
+                + '<div><label class="prop-label">カラー</label>'
+                + '<select class="prop-input" onchange="updateProp(\'color\',this.value)">'
+                + opt('indigo', 'インディゴ', comp.color) + opt('emerald', 'エメラルド', comp.color)
+                + opt('rose', 'ローズ', comp.color) + opt('slate', 'グレー', comp.color)
+                + '</select></div>'
+                + '<div><label class="prop-label">タップ時のアクション</label>'
+                + '<select class="prop-input" onchange="updateProp(\'actionType\',this.value); renderPropertyEditor();">'
+                + '<option value="alert"' + (comp.actionType === 'alert' ? ' selected' : '') + '>ポップアップを表示</option>'
+                + '<option value="navigate"' + (comp.actionType === 'navigate' ? ' selected' : '') + '>画面を切り替える</option>'
+                + '<option value="saveRecord"' + (comp.actionType === 'saveRecord' ? ' selected' : '') + '>データを保存する</option>'
+                + '<option value="openUrl"' + (comp.actionType === 'openUrl' ? ' selected' : '') + '>URLを開く</option>'
+                + '</select></div>';
+            if (comp.actionType === 'navigate') {
+                html += '<div><label class="prop-label">移動先の画面</label>'
+                    + '<select class="prop-input" onchange="updateProp(\'actionTarget\',this.value)">' + pageOpts + '</select></div>';
+            } else if (comp.actionType === 'alert') {
+                html += '<div><label class="prop-label">メッセージ内容</label>'
+                    + '<input class="prop-input" type="text" value="' + escAttr(comp.actionValue || '') + '" oninput="updateProp(\'actionValue\',this.value)"></div>';
+            } else if (comp.actionType === 'openUrl') {
+                html += '<div><label class="prop-label">開くURL</label>'
+                    + '<input class="prop-input" type="text" placeholder="https://..." value="' + escAttr(comp.actionUrl || '') + '" oninput="updateProp(\'actionUrl\',this.value)"></div>';
+            } else if (comp.actionType === 'saveRecord') {
+                // 全ページの数値入力欄を列挙
+                var srInputs = [];
+                var srPageKeys = Object.keys(appPages);
+                for (var spi = 0; spi < srPageKeys.length; spi++) {
+                    var srPc = appPages[srPageKeys[spi]].components || [];
+                    for (var sci = 0; sci < srPc.length; sci++) {
+                        if (srPc[sci].type === 'input' && (!srPc[sci].inputKey || srPc[sci].inputKey === 'value')) {
+                            srInputs.push({ id: srPc[sci].id, placeholder: srPc[sci].placeholder || '', pageName: appPages[srPageKeys[spi]].name });
+                        }
+                    }
+                }
+                var srOpts = '<option value="">（指定なし：このページの数値入力欄すべて）</option>';
+                for (var sii = 0; sii < srInputs.length; sii++) {
+                    var sri = srInputs[sii];
+                    var srLabel = sri.pageName + '：' + (sri.placeholder || sri.id);
+                    srOpts += '<option value="' + escAttr(sri.id) + '"' + (comp.valueInputId === sri.id ? ' selected' : '') + '>' + escAttr(srLabel) + '</option>';
+                }
+                html += '<div><label class="prop-label">保存する入力フォーム（数値）</label>'
+                    + '<select class="prop-input" onchange="updateProp(\'valueInputId\',this.value)">' + srOpts + '</select>'
+                    + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">このボタンが押されたとき、どの数値入力欄のデータを保存するか選んでください。グラフとペアで同じフォームを指定します。</p></div>';
+            }
+
+        } else if (comp.type === 'image') {
+            html += '<div><label class="prop-label">タイトル</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.title) + '" oninput="updateProp(\'title\',this.value)"></div>'
+                + '<div><label class="prop-label">説明文</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.desc) + '" oninput="updateProp(\'desc\',this.value)"></div>'
+                + '<div><label class="prop-label">画像URL</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.img) + '" oninput="updateProp(\'img\',this.value)"></div>';
+
+        } else if (comp.type === 'input') {
+            html += '<div><label class="prop-label">入力欄のヒント文</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.placeholder) + '" oninput="updateProp(\'placeholder\',this.value)"></div>'
+                + '<div><label class="prop-label">この入力欄の役割</label>'
+                + '<select class="prop-input" onchange="updateProp(\'inputKey\',this.value)">'
+                + '<option value="value"' + (!comp.inputKey || comp.inputKey === 'value' ? ' selected' : '') + '>数値を入力する</option>'
+                + '<option value="memo"' + (comp.inputKey === 'memo' ? ' selected' : '') + '>メモ・コメントを書く</option>'
+                + '</select>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">「記録を保存する」ボタンを押したとき、この役割でデータが保存されます。</p></div>';
+
+        } else if (comp.type === 'ai') {
+            html += '<div><label class="prop-label">パーツ名（見出し）</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.label) + '" oninput="updateProp(\'label\',this.value)"></div>'
+                + '<div><label class="prop-label">入力欄の上に表示するラベル文</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.userInputLabel) + '" oninput="updateProp(\'userInputLabel\',this.value)">'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">入力欄の上に表示される説明文です。</p></div>'
+                + '<div><label class="prop-label">入力欄のプレースホルダー（薄い文字）</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.inputPlaceholder || '') + '" placeholder="例：今日の運動内容を入力..." oninput="updateProp(\'inputPlaceholder\',this.value)">'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">入力欄の中に薄く表示されるヒント文です。</p></div>'
+                + '<div><label class="prop-label">ボタンの文字</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.btnText) + '" oninput="updateProp(\'btnText\',this.value)"></div>'
+                + '<div><label class="prop-label" style="color:#7c3aed;font-weight:700;"><i class="fa-solid fa-shield-halved" style="margin-right:4px;"></i>システムプロンプト</label>'
+                + '<textarea class="prop-input" rows="6" style="resize:vertical;line-height:1.6;" oninput="updateProp(\'systemPrompt\',this.value)">' + esc(comp.systemPrompt) + '</textarea>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">AIの役割・制約を記述します。生徒はここを変更できません。</p></div>';
+
+        } else if (comp.type === 'chart') {
+            // 全ページの「数値入力」役割の入力欄を列挙
+            var allInputs = [];
+            var pageKeys2 = Object.keys(appPages);
+            for (var pi2 = 0; pi2 < pageKeys2.length; pi2++) {
+                var pc2 = appPages[pageKeys2[pi2]].components || [];
+                for (var ci2 = 0; ci2 < pc2.length; ci2++) {
+                    if (pc2[ci2].type === 'input' && (!pc2[ci2].inputKey || pc2[ci2].inputKey === 'value')) {
+                        allInputs.push({ id: pc2[ci2].id, placeholder: pc2[ci2].placeholder || '', pageName: appPages[pageKeys2[pi2]].name });
+                    }
+                }
+            }
+            var inputOpts = '<option value="">（入力フォームを選んでください）</option>';
+            for (var ii2 = 0; ii2 < allInputs.length; ii2++) {
+                var inp2 = allInputs[ii2];
+                var inputLabel = inp2.pageName + '：' + (inp2.placeholder || inp2.id);
+                inputOpts += '<option value="' + escAttr(inp2.id) + '"' + (comp.valueInputId === inp2.id ? ' selected' : '') + '>' + escAttr(inputLabel) + '</option>';
+            }
+            var curMaxY = comp.chartMaxY != null ? comp.chartMaxY : '';
+            html += '<div><label class="prop-label">グラフのタイトル</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.chartTitle || '記録グラフ') + '" oninput="updateProp(\'chartTitle\',this.value)"></div>'
+                + '<div><label class="prop-label">グラフの種類</label>'
+                + '<select class="prop-input" onchange="updateProp(\'chartType\',this.value)">'
+                + '<option value="bar"' + (!comp.chartType || comp.chartType === 'bar' ? ' selected' : '') + '>棒グラフ</option>'
+                + '<option value="line"' + (comp.chartType === 'line' ? ' selected' : '') + '>折れ線グラフ</option>'
+                + '<option value="pie"' + (comp.chartType === 'pie' ? ' selected' : '') + '>円グラフ</option>'
+                + '</select></div>'
+                + '<div><label class="prop-label">グラフに使う入力フォーム</label>'
+                + '<select class="prop-input" onchange="updateProp(\'valueInputId\',this.value)">' + inputOpts + '</select>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">どの入力フォーム（数値）のデータをグラフに表示するか選んでください。</p></div>'
+                + '<div><label class="prop-label">縦軸の上限（空欄＝自動）</label>'
+                + '<input class="prop-input" type="number" min="1" placeholder="例: 60（分）、100（g）など" value="' + escAttr(curMaxY) + '"'
+                + ' oninput="updateProp(\'chartMaxY\', this.value === \'\' ? null : parseFloat(this.value))">'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">数値を入れると縦軸の最大値を固定できます。</p></div>';
+
+        } else if (comp.type === 'memoList') {
+            html += '<div><label class="prop-label">一覧のタイトル</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.listTitle || 'メモ・コメント一覧') + '" oninput="updateProp(\'listTitle\',this.value)"></div>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:3px;">「メモ・コメント」役割の入力欄の内容を日付順で表示します。</p>';
+
+        } else if (comp.type === 'review') {
+            if (!comp.reviewItems) comp.reviewItems = [];
+            var rvItemsHtml = '';
+            for (var ri = 0; ri < comp.reviewItems.length; ri++) {
+                rvItemsHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'
+                    + '<input class="prop-input" type="text" style="flex:1;" value="' + escAttr(comp.reviewItems[ri]) + '"'
+                    + ' oninput="updateReviewItem(' + ri + ',this.value)">'
+                    + '<button onclick="removeReviewItem(' + ri + ')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;flex-shrink:0;"><i class="fa-solid fa-xmark"></i></button>'
+                    + '</div>';
+            }
+            if (comp.reviewItems.length === 0) {
+                rvItemsHtml = '<div style="font-size:10px;color:#94a3b8;padding:6px 0;">（項目がありません。追加してください）</div>';
+            }
+            html += '<div><label class="prop-label">レビューのタイトル</label>'
+                + '<input class="prop-input" type="text" value="' + escAttr(comp.label || 'アプリの評価') + '" oninput="updateProp(\'label\',this.value)"></div>'
+                + '<div><label class="prop-label" style="color:#ea580c;"><i class="fa-solid fa-star" style="margin-right:4px;"></i>評価項目</label>'
+                + '<div id="review-items-container">' + rvItemsHtml + '</div>'
+                + '<button onclick="addReviewItem()" style="margin-top:6px;width:100%;padding:7px;background:#fff7ed;color:#ea580c;border:1.5px dashed #fed7aa;border-radius:9px;font-size:11px;font-weight:600;cursor:pointer;">'
+                + '<i class="fa-solid fa-plus" style="margin-right:4px;"></i>項目を追加</button>'
+                + '<p style="font-size:10px;color:#94a3b8;margin-top:4px;">各項目ごとに1〜5の数値でユーザーが評価します。</p></div>';
+
+        } else {
+            html += '<p style="font-size:11px;color:#94a3b8;">このパーツの設定はありません。</p>';
+        }
+
+        form.innerHTML = html;
+    }
+
+    function opt(val, label, current) {
+        return '<option value="' + val + '"' + (current === val ? ' selected' : '') + '>' + label + '</option>';
+    }
+
+    function toggleBold() {
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === selectedCompId) {
+                // headerのデフォルトはtrue扱い
+                var cur = (comps[i].type === 'header') ? (comps[i].bold !== false) : !!comps[i].bold;
+                comps[i].bold = !cur;
+                renderPreview();
+                renderPropertyEditor();
+                break;
+            }
+        }
+    }
+
+    function toggleUnderline() {
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === selectedCompId) {
+                comps[i].underline = !comps[i].underline;
+                renderPreview();
+                renderPropertyEditor();
+                break;
+            }
+        }
+    }
+
+    // =====================================================================
+    // レビュー項目編集
+    // =====================================================================
+    function getSelectedReviewComp() {
+        if (!selectedCompId) return null;
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === selectedCompId && comps[i].type === 'review') return comps[i];
+        }
+        return null;
+    }
+
+    function addReviewItem() {
+        var comp = getSelectedReviewComp();
+        if (!comp) return;
+        if (!comp.reviewItems) comp.reviewItems = [];
+        comp.reviewItems.push('評価項目' + (comp.reviewItems.length + 1));
+        renderPropertyEditor();
+        renderPreview();
+    }
+
+    function removeReviewItem(idx) {
+        var comp = getSelectedReviewComp();
+        if (!comp || !comp.reviewItems) return;
+        comp.reviewItems.splice(idx, 1);
+        renderPropertyEditor();
+        renderPreview();
+    }
+
+    function updateReviewItem(idx, val) {
+        var comp = getSelectedReviewComp();
+        if (!comp || !comp.reviewItems) return;
+        comp.reviewItems[idx] = val;
+        // プレビュー更新は重いので省く（保存時に反映）
+    }
+
+    // =====================================================================
+    // アクション実行
+    // =====================================================================
+    function executeAction(compId) {
+        var comp = null;
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === compId) { comp = comps[i]; break; }
+        }
+        if (!comp) return;
+
+        if (comp.actionType === 'navigate') {
+            if (appPages[comp.actionTarget]) {
+                activePageId = comp.actionTarget;
+                selectedCompId = null;
+                document.getElementById('prop-section').className = 'prop-section';
+                renderEditor();
+            } else {
+                showNotify('移動先の画面が見つかりません。');
+            }
+        } else if (comp.actionType === 'saveRecord') {
+            saveRecordFromInputs();
+        } else if (comp.actionType === 'openUrl') {
+            if (comp.actionUrl) { window.open(comp.actionUrl, '_blank'); }
+            else { showNotify('URLが設定されていません。'); }
+        } else {
+            showNotify(comp.actionValue || 'ボタンが押されました！');
+        }
+    }
+
+    function saveRecordFromInputs() {
+        var comps = appPages[activePageId].components;
+        var dateVal = '', numVal = 0, labelVal = '';
+        var hasDate = false, hasValue = false;
+
+        for (var i = 0; i < comps.length; i++) {
+            var c = comps[i];
+            if (c.type !== 'input') continue;
+            var el = document.getElementById('inp_' + c.id);
+            if (!el) continue;
+            var val = el.value.trim();
+            if (!val) continue;
+            if (c.inputKey === 'date') { dateVal = val; hasDate = true; }
+            else if (c.inputKey === 'value') { numVal = parseFloat(val) || 0; hasValue = true; }
+            else { labelVal += (labelVal ? '　' : '') + val; }
+        }
+
+        if (!hasDate && !hasValue && !labelVal) {
+            showNotify('入力フォームに何も入力されていません。');
+            return;
+        }
+
+        var now = new Date();
+        var entry = {
+            x: hasDate ? dateVal : (now.getMonth() + 1) + '/' + now.getDate(),
+            y: hasValue ? numVal : 1,
+            label: labelVal || (hasDate ? dateVal : '記録')
+        };
+        recordsData.push(entry);
+        renderPreview();
+
+        // GAS連携時はここで google.script.run.saveRecord(...) を呼ぶ
+        showNotify('記録を保存しました！グラフに反映されます。');
+    }
+
+    // =====================================================================
+    // AIアドバイス
+    // =====================================================================
+    function triggerAi(compId) {
+        var comp = null;
+        var comps = appPages[activePageId].components;
+        for (var i = 0; i < comps.length; i++) {
+            if (comps[i].id === compId) { comp = comps[i]; break; }
+        }
+        if (!comp) return;
+
+        var inputEl = document.getElementById('ai_in_' + compId);
+        var resEl = document.getElementById('ai_res_' + compId);
+        if (!inputEl || !resEl) return;
+        var userText = inputEl.value.trim();
+
+        resEl.style.display = 'block';
+        resEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;color:#7c3aed;"></i>AIに問い合わせ中...';
+
+        // GAS連携時:
+        // google.script.run.withSuccessHandler(function(r) {
+        //   resEl.innerHTML = r.success ? r.response : 'エラー: ' + r.error;
+        // }).callAI({ systemPrompt: comp.systemPrompt, userMessage: userText, pageId: activePageId });
+
+        // モック動作
+        setTimeout(function() {
+            if (!userText) {
+                resEl.innerHTML = '<i class="fa-solid fa-circle-info" style="margin-right:4px;color:#f59e0b;"></i>何かを入力してからAIに聞いてみよう！';
+            } else {
+                resEl.innerHTML = '<i class="fa-solid fa-robot" style="margin-right:4px;color:#7c3aed;"></i>「' + esc(userText) + '」について：継続することが大切です！今日もよく頑張りました。水分補給と睡眠もしっかりとりましょう。';
+            }
+        }, 1400);
+    }
+
+    // =====================================================================
+    // データタブ
+    // =====================================================================
+    var currentDataTab = 'records';
+    var allUserRecords = [];
+    var currentUserFilter = '__all__';
+    var allReviewsRaw = [];
+    var allAiLogsRaw = [];
+    var currentAiLogFilter = '__all__';
+
+    function switchDataTab(tab) {
+        currentDataTab = tab;
+        document.getElementById('data-section-records').style.display = tab === 'records' ? 'flex' : 'none';
+        document.getElementById('data-section-reviews').style.display = tab === 'reviews' ? 'flex' : 'none';
+        document.getElementById('data-section-ailogs').style.display = tab === 'ailogs' ? 'flex' : 'none';
+        document.getElementById('dtab-records').className = 'data-tab-btn ' + (tab === 'records' ? 'active' : 'inactive');
+        document.getElementById('dtab-reviews').className = 'data-tab-btn ' + (tab === 'reviews' ? 'active' : 'inactive');
+        document.getElementById('dtab-ailogs').className = 'data-tab-btn ' + (tab === 'ailogs' ? 'active' : 'inactive');
+
+        if (tab === 'records' && allUserRecords.length === 0) reloadDataTab();
+        if (tab === 'reviews') reloadReviews();
+        if (tab === 'ailogs') reloadAiLogs();
+    }
+
+    function reloadDataTab() {
+        var dummyRecords = [
+            { rowId: '1', userName: '田中さん', date: '8/1', value: '32', memo: 'ウォーキング', created: '2026/08/01 08:12', inputId: '' },
+            { rowId: '2', userName: '佐藤さん', date: '8/1', value: '45', memo: 'ランニング', created: '2026/08/01 09:03', inputId: '' },
+            { rowId: '3', userName: '田中さん', date: '8/2', value: '28', memo: '自転車', created: '2026/08/02 07:55', inputId: '' },
+            { rowId: '4', userName: '鈴木さん', date: '8/2', value: '60', memo: 'サッカー', created: '2026/08/02 16:40', inputId: '' },
+            { rowId: '5', userName: '佐藤さん', date: '8/3', value: '38', memo: 'バスケ', created: '2026/08/03 08:20', inputId: '' },
+            { rowId: '6', userName: '田中さん', date: '8/3', value: '50', memo: '水泳', created: '2026/08/03 10:11', inputId: '' },
+            { rowId: '7', userName: '高橋さん', date: '8/4', value: '25', memo: 'ヨガ', created: '2026/08/04 07:30', inputId: '' },
+            { rowId: '8', userName: '鈴木さん', date: '8/4', value: '70', memo: '野球', created: '2026/08/04 15:00', inputId: '' }
+        ];
+        allUserRecords = dummyRecords;
+        renderRecordsTableFromData(dummyRecords);
+        buildUserFilterChips(dummyRecords);
+        updateStats(dummyRecords);
+    }
+
+    function buildUserFilterChips(records) {
+        var userMap = {};
+        for (var i = 0; i < records.length; i++) {
+            userMap[records[i].userName] = true;
+        }
+        var users = Object.keys(userMap);
+        var container = document.getElementById('user-filter-chips');
+        container.innerHTML = '<button class="user-chip ' + (currentUserFilter === '__all__' ? 'active' : 'inactive') + '" onclick="filterByUser(\'__all__\')">全員（' + records.length + '件）</button>';
+        for (var j = 0; j < users.length; j++) {
+            var u = users[j];
+            var cnt = 0;
+            for (var k = 0; k < records.length; k++) { if (records[k].userName === u) cnt++; }
+            container.innerHTML += '<button class="user-chip ' + (currentUserFilter === u ? 'active' : 'inactive') + '" onclick="filterByUser(\'' + escAttr(u) + '\')">' + esc(u) + '（' + cnt + '）</button>';
+        }
+    }
+
+    function filterByUser(userName) {
+        currentUserFilter = userName;
+        var filtered = userName === '__all__' ? allUserRecords : allUserRecords.filter(function(r) { return r.userName === userName; });
+        renderRecordsTableFromData(filtered);
+        buildUserFilterChips(allUserRecords);
+        updateStats(filtered);
+    }
+
+    function updateStats(records) {
+        var userMap = {};
+        var total = 0, sum = 0, cnt = 0;
+        for (var i = 0; i < records.length; i++) {
+            userMap[records[i].userName] = true;
+            var v = parseFloat(records[i].value);
+            if (!isNaN(v)) { sum += v; cnt++; }
+            total++;
+        }
+        document.getElementById('stat-users').textContent = Object.keys(userMap).length;
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-avg').textContent = cnt > 0 ? Math.round(sum / cnt * 10) / 10 : '-';
+    }
+
+    function renderRecordsTableFromData(records) {
+        var tbody = document.getElementById('records-tbody');
+        var empty = document.getElementById('records-empty');
+        tbody.innerHTML = '';
+
+        // 日付昇順ソート
+        records.sort(function(a, b) { return a.date > b.date ? 1 : a.date < b.date ? -1 : 0; });
+
+        if (records.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+
+        for (var i = 0; i < records.length; i++) {
+            var r = records[i];
+            var tr = document.createElement('tr');
+            tr.id = 'rec-row-' + r.rowId;
+            tr.innerHTML = '<td style="font-weight:600;color:#4f6ef7;">' + esc(r.userName) + '</td>'
+                + '<td>' + esc(r.date) + '</td>'
+                + '<td style="font-weight:700;">' + r.value + '</td>'
+                + '<td style="color:#64748b;">' + esc(r.memo || '') + '</td>'
+                + '<td style="font-size:10px;color:#94a3b8;">' + esc(r.created) + '</td>'
+                + '<td style="text-align:center;"><button onclick="deleteRecord(\'' + escAttr(r.rowId) + '\')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;"><i class="fa-solid fa-trash"></i></button></td>';
+            tbody.appendChild(tr);
+        }
+    }
+
+    function deleteRecord(rowId) {
+        if (!confirm('この記録を削除しますか？')) return;
+        var row = document.getElementById('rec-row-' + rowId);
+        if (row) row.parentNode.removeChild(row);
+        allUserRecords = allUserRecords.filter(function(r) { return r.rowId !== rowId; });
+        updateStats(allUserRecords);
+        buildUserFilterChips(allUserRecords);
+        if (allUserRecords.length === 0) {
+            document.getElementById('records-empty').style.display = 'block';
+        }
+    }
+
+    function reloadReviews() {
+        var dummyReviews = [
+            { userName: '田中さん', ratings: { '役立ち度': 3, '使いやすさ': 2 }, comment: 'グラフが見やすくていいです！', created: '2026/08/03 10:20' },
+            { userName: '佐藤さん', ratings: { '役立ち度': 2, '使いやすさ': 3 }, comment: 'もっと記録の種類があるといい', created: '2026/08/03 11:05' },
+            { userName: '鈴木さん', ratings: { '役立ち度': 3, '使いやすさ': 3 }, comment: '毎日使いたいです', created: '2026/08/04 09:00' }
+        ];
+        allReviewsRaw = dummyReviews;
+        renderReviewStats(dummyReviews);
+    }
+
+    function renderReviewStats(reviews) {
+        // 統計カード更新
+        var totalScore = 0, totalCount = 0;
+        for (var ii = 0; ii < reviews.length; ii++) {
+            var rvs = reviews[ii];
+            if (rvs.ratings && typeof rvs.ratings === 'object') {
+                var rksAll = Object.keys(rvs.ratings);
+                for (var ki = 0; ki < rksAll.length; ki++) {
+                    var sc = parseInt(rvs.ratings[rksAll[ki]], 10) || 0;
+                    totalScore += sc;
+                    totalCount++;
+                }
+            }
+        }
+        var avg = totalCount > 0 ? Math.round(totalScore / totalCount * 10) / 10 : 0;
+        document.getElementById('rv-count').textContent = reviews.length;
+        document.getElementById('rv-avg').textContent = totalCount > 0 ? avg : '-';
+
+        var marks = ['▲', '○', '◎'];
+        var stars = '';
+        for (var i = 1; i <= 3; i++) {
+            stars += '<span style="color:' + (i <= Math.round(avg) ? '#ea580c' : '#d1d9f0') + ';font-size:20px;">' + marks[i-1] + '</span>';
+        }
+        document.getElementById('rv-stars').innerHTML = stars;
+
+        // 項目別円グラフ描画
+        renderReviewItemCharts(reviews);
+
+        // レビュー一覧
+        var listEl = document.getElementById('reviews-list');
+        if (!reviews || reviews.length === 0) {
+            listEl.innerHTML = '<div class="records-empty"><i class="fa-solid fa-star" style="font-size:24px;display:block;margin-bottom:8px;color:#fde68a;"></i>まだレビューがありません。</div>';
+            return;
+        }
+        var html = '';
+        for (var j = 0; j < reviews.length; j++) {
+            var rv = reviews[j];
+            var ratingsHtml = '';
+            if (rv.ratings && typeof rv.ratings === 'object') {
+                var rKeys = Object.keys(rv.ratings);
+                if (rKeys.length > 0) {
+                    ratingsHtml += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">';
+                    for (var ri = 0; ri < rKeys.length; ri++) {
+                        var rk = rKeys[ri];
+                        var rv_score = rv.ratings[rk];
+                        ratingsHtml += '<div style="display:flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:3px 8px;">'
+                            + '<span style="font-size:10px;color:#92400e;">' + esc(rk) + '</span>'
+                            + '<span style="font-size:12px;font-weight:700;color:#ea580c;">' + rv_score + '</span>'
+                            + '</div>';
+                    }
+                    ratingsHtml += '</div>';
+                }
+            } else {
+                var rvStars = '';
+                for (var s = 1; s <= 5; s++) {
+                    rvStars += '<span style="color:' + (s <= rv.rating ? '#f59e0b' : '#d1d9f0') + ';font-size:13px;">★</span>';
+                }
+                ratingsHtml = '<div style="margin-bottom:4px;">' + rvStars + '</div>';
+            }
+            html += '<div style="padding:14px 16px;border-bottom:1px solid #eef0f8;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+                + '<div style="font-size:12px;font-weight:700;color:#1e293b;">' + esc(rv.userName) + '</div>'
+                + '<div style="font-size:10px;color:#94a3b8;">' + esc(rv.created) + '</div>'
+                + '</div>'
+                + ratingsHtml
+                + (rv.comment ? '<div style="font-size:12px;color:#475569;line-height:1.6;margin-top:4px;padding:8px;background:#f8faff;border-radius:8px;">'
+                    + '<i class="fa-solid fa-comment" style="color:#94a3b8;margin-right:4px;font-size:10px;"></i>' + esc(rv.comment) + '</div>' : '')
+                + '</div>';
+        }
+        listEl.innerHTML = html;
+    }
+
+    // =====================================================================
+    // AIアドバイスログ
+    // =====================================================================
+    function reloadAiLogs() {
+        var dummyLogs = [
+            { userName: '田中さん', compId: 'AIアドバイス', userMsg: '今日30分走りましたが足が痛いです', response: '足の筋肉が疲れているサインかもしれません。今日はストレッチをしっかりして休ませてあげましょう！明日また頑張れます。', ts: '2026/08/03 10:05' },
+            { userName: '佐藤さん', compId: 'AIアドバイス', userMsg: '毎日続けるコツはありますか？', response: '毎日同じ時間に少しだけ運動するのが続けるコツです。完璧を目指さず「今日は5分だけ」でも大丈夫！習慣になると楽しくなりますよ。', ts: '2026/08/03 11:10' }
+        ];
+        allAiLogsRaw = dummyLogs;
+        currentAiLogFilter = '__all__';
+        buildAiLogCompChips(dummyLogs);
+        renderAiLogList(dummyLogs);
+    }
+
+    function buildAiLogCompChips(logs) {
+        var compMap = {};
+        for (var i = 0; i < logs.length; i++) {
+            var cid = logs[i].compId || '（不明）';
+            compMap[cid] = (compMap[cid] || 0) + 1;
+        }
+        var container = document.getElementById('ailog-comp-chips');
+        container.innerHTML = '<button class="user-chip ' + (currentAiLogFilter === '__all__' ? 'active' : 'inactive') + '" onclick="filterAiLogs(\'__all__\')">すべて（' + logs.length + '件）</button>';
+        var cids = Object.keys(compMap);
+        for (var j = 0; j < cids.length; j++) {
+            var cid2 = cids[j];
+            container.innerHTML += '<button class="user-chip ' + (currentAiLogFilter === cid2 ? 'active' : 'inactive') + '" onclick="filterAiLogs(\'' + escAttr(cid2) + '\')">'
+                + esc(cid2) + '（' + compMap[cid2] + '）</button>';
+        }
+    }
+
+    function filterAiLogs(compId) {
+        currentAiLogFilter = compId;
+        var filtered = compId === '__all__'
+            ? allAiLogsRaw
+            : allAiLogsRaw.filter(function(l) { return (l.compId || '（不明）') === compId; });
+        buildAiLogCompChips(allAiLogsRaw);
+        renderAiLogList(filtered);
+    }
+
+    function renderAiLogList(logs) {
+        var listEl = document.getElementById('ailog-list');
+        if (!logs || logs.length === 0) {
+            listEl.innerHTML = '<div class="records-empty"><i class="fa-solid fa-robot" style="font-size:24px;display:block;margin-bottom:8px;color:#d8b4fe;"></i>まだAIアドバイスの利用記録がありません。</div>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < logs.length; i++) {
+            var log = logs[i];
+            html += '<div style="padding:14px 16px;border-bottom:1px solid #eef0f8;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+                + '<div style="display:flex;align-items:center;gap:8px;">'
+                + '<span style="font-size:12px;font-weight:700;color:#7c3aed;">' + esc(log.userName || '（名前なし）') + '</span>'
+                + (log.compId ? '<span style="font-size:10px;background:#f5f0ff;color:#7c3aed;border:1px solid #d8b4fe;border-radius:6px;padding:2px 7px;">' + esc(log.compId) + '</span>' : '')
+                + '</div>'
+                + '<span style="font-size:10px;color:#94a3b8;">' + esc(log.ts) + '</span>'
+                + '</div>'
+                + '<div style="background:#f8faff;border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+                + '<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;"><i class="fa-solid fa-comment" style="margin-right:4px;"></i>質問</div>'
+                + '<div style="font-size:12px;color:#1e293b;line-height:1.7;">' + esc(log.userMsg) + '</div>'
+                + '</div>'
+                + '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;">'
+                + '<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;"><i class="fa-solid fa-robot" style="margin-right:4px;color:#10b981;"></i>AI回答</div>'
+                + '<div style="font-size:12px;color:#1e293b;line-height:1.7;white-space:pre-wrap;">' + esc(log.response) + '</div>'
+                + '</div>'
+                + '</div>';
+        }
+        listEl.innerHTML = html;
+    }
+
+    // =====================================================================
+    // AI分析（レビュータブ内）
+    // =====================================================================
+    function submitAiAnalysis() {
+        var inputEl = document.getElementById('ai-analysis-input');
+        var resultEl = document.getElementById('ai-analysis-result');
+        var btn = document.getElementById('ai-analysis-btn');
+        var question = inputEl ? inputEl.value.trim() : '';
+        if (!question) { showNotify('質問を入力してください。'); return; }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>分析中...';
+        resultEl.style.display = 'block';
+        resultEl.textContent = '分析中です...';
+        setTimeout(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right:6px;"></i>AIに分析してもらう';
+            resultEl.textContent = '【サンプル回答】レビューコメントでは「グラフが見やすい」「続けやすい」という声が多く見られます。特に使いやすさのスコアが高い傾向にあります。改善点としては記録の種類を増やしてほしいという要望がありました。';
+        }, 1500);
+    }
+
+    function applyReviewFilter() {
+        var fromEl = document.getElementById('rv-date-from');
+        var toEl = document.getElementById('rv-date-to');
+        var fromVal = fromEl ? fromEl.value : '';
+        var toVal = toEl ? toEl.value : '';
+        var filtered = allReviewsRaw.filter(function(rv) {
+            var d = new Date(rv.created.replace(/\//g, '-'));
+            if (fromVal) {
+                var from = new Date(fromVal);
+                if (d < from) return false;
+            }
+            if (toVal) {
+                var to = new Date(toVal);
+                to.setDate(to.getDate() + 1);
+                if (d >= to) return false;
+            }
+            return true;
+        });
+        renderReviewStats(filtered);
+    }
+
+    function clearReviewFilter() {
+        var fromEl = document.getElementById('rv-date-from');
+        var toEl = document.getElementById('rv-date-to');
+        if (fromEl) fromEl.value = '';
+        if (toEl) toEl.value = '';
+        renderReviewStats(allReviewsRaw);
+    }
+
+    // 円グラフ補助関数
+    function polarToCartesian(cx, cy, r, angleDeg) {
+        var rad = (angleDeg - 90) * Math.PI / 180;
+        return { x: Math.round((cx + r * Math.cos(rad)) * 100) / 100, y: Math.round((cy + r * Math.sin(rad)) * 100) / 100 };
+    }
+
+    function getArcPath(cx, cy, r, startAngle, endAngle) {
+        var start = polarToCartesian(cx, cy, r, endAngle);
+        var end = polarToCartesian(cx, cy, r, startAngle);
+        var largeArcFlag = (endAngle - startAngle) <= 180 ? '0' : '1';
+        return 'M ' + cx + ' ' + cy
+            + ' L ' + start.x + ' ' + start.y
+            + ' A ' + r + ' ' + r + ' 0 ' + largeArcFlag + ' 0 ' + end.x + ' ' + end.y
+            + ' Z';
+    }
+
+    function buildPieChart(counts, r) {
+        var total = (counts[1] || 0) + (counts[2] || 0) + (counts[3] || 0);
+        if (total === 0) {
+            return '<svg width="' + (r*2) + '" height="' + (r*2) + '"><circle cx="' + r + '" cy="' + r + '" r="' + (r-6) + '" fill="#eeeeee"/>'
+                + '<text x="' + r + '" y="' + r + '" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#94a3b8">なし</text></svg>';
+        }
+        var colors = ['#f97316', '#4f6ef7', '#10b981'];
+        var cx = r, cy = r, radius = r - 6;
+        var paths = '';
+        var currentAngle = 0;
+        for (var s = 1; s <= 3; s++) {
+            var cnt = counts[s] || 0;
+            if (cnt === 0) continue;
+            var sliceAngle = (cnt / total) * 360;
+            if (sliceAngle >= 360) sliceAngle = 359.9;
+            var endAngle = currentAngle + sliceAngle;
+            paths += '<path d="' + getArcPath(cx, cy, radius, currentAngle, endAngle) + '" fill="' + colors[s-1] + '"/>';
+            currentAngle = endAngle;
+        }
+        return '<svg width="' + (r*2) + '" height="' + (r*2) + '" viewBox="0 0 ' + (r*2) + ' ' + (r*2) + '">'
+            + paths
+            + '<circle cx="' + cx + '" cy="' + cy + '" r="' + Math.round(radius * 0.45) + '" fill="white"/>'
+            + '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="#1e293b">' + total + '</text>'
+            + '<text x="' + cx + '" y="' + (cy + 11) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#94a3b8">件</text>'
+            + '</svg>';
+    }
+
+    // 項目別人数内訳の円グラフを描画
+    function renderReviewItemCharts(reviews) {
+        var chartsCard = document.getElementById('rv-item-charts-card');
+        var chartsEl = document.getElementById('rv-item-charts');
+        if (!chartsCard || !chartsEl) return;
+
+        // ratings フィールドを持つレビューを抽出・集計
+        var itemTotals = {};
+        var itemCounts = {};
+        var itemDist = {};  // { itemName: { 1: n, 2: n, 3: n } }
+        for (var j = 0; j < reviews.length; j++) {
+            var rv = reviews[j];
+            if (!rv.ratings || typeof rv.ratings !== 'object') continue;
+            var keys = Object.keys(rv.ratings);
+            for (var k = 0; k < keys.length; k++) {
+                var itemName = keys[k];
+                var score = parseInt(rv.ratings[itemName], 10) || 0;
+                if (!itemTotals[itemName]) { itemTotals[itemName] = 0; itemCounts[itemName] = 0; itemDist[itemName] = { 1: 0, 2: 0, 3: 0 }; }
+                itemTotals[itemName] += score;
+                itemCounts[itemName]++;
+                if (score >= 1 && score <= 3) itemDist[itemName][score]++;
+            }
+        }
+        var itemNames = Object.keys(itemTotals);
+        if (itemNames.length === 0) {
+            chartsCard.style.display = 'none';
+            return;
+        }
+        chartsCard.style.display = 'block';
+
+        var html = '';
+        for (var i = 0; i < itemNames.length; i++) {
+            var name = itemNames[i];
+            var avgScore = itemCounts[name] > 0 ? Math.round(itemTotals[name] / itemCounts[name] * 10) / 10 : 0;
+            var counts = itemDist[name];
+            html += '<div style="text-align:center;width:140px;">'
+                + buildPieChart(counts, 54)
+                + '<div style="font-size:11px;font-weight:700;color:#1e293b;margin-top:6px;line-height:1.4;">' + esc(name) + '</div>'
+                + '<div style="display:flex;justify-content:center;gap:8px;margin-top:4px;font-size:10px;">'
+                + '<span style="color:#f97316;">▲ ' + (counts[1]||0) + '人</span>'
+                + '<span style="color:#4f6ef7;">○ ' + (counts[2]||0) + '人</span>'
+                + '<span style="color:#10b981;">◎ ' + (counts[3]||0) + '人</span>'
+                + '</div>'
+                + '<div style="font-size:11px;color:#64748b;margin-top:4px;">平均 ' + avgScore.toFixed(1) + ' / 3（母数 ' + itemCounts[name] + '人）</div>'
+                + '</div>';
+        }
+        chartsEl.innerHTML = html;
+    }
+
+    // スコア/最大値 の円グラフSVGを生成（中央に数値表示）
+    function buildPieScoreChart(score, max, color, r) {
+        var pct = max > 0 ? score / max : 0;
+        if (pct > 1) pct = 1;
+        var cx = r, cy = r, radius = r - 9;
+        var circumference = 2 * Math.PI * radius;
+        // dashoffset で始点を12時（上）にする: offset = circumference * (1 - pct) * ... 実際にはrotateで対応
+        // strokeは -90度回転で上から始まる
+        var filled = (pct * circumference).toFixed(2);
+        var gap = ((1 - pct) * circumference).toFixed(2);
+        return '<svg width="' + (r*2) + '" height="' + (r*2) + '" viewBox="0 0 ' + (r*2) + ' ' + (r*2) + '">'
+            + '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="#eeeeee" stroke-width="11"/>'
+            + '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="' + color + '" stroke-width="11"'
+            + ' stroke-dasharray="' + filled + ' ' + gap + '" stroke-linecap="round"'
+            + ' transform="rotate(-90 ' + cx + ' ' + cy + ')"/>'
+            + '<text x="' + cx + '" y="' + (cy + 1) + '" text-anchor="middle" dominant-baseline="middle"'
+            + ' font-size="17" font-weight="700" fill="' + color + '">' + score.toFixed(1) + '</text>'
+            + '<text x="' + cx + '" y="' + (cy + 15) + '" text-anchor="middle" dominant-baseline="middle"'
+            + ' font-size="9" fill="#94a3b8">/ ' + max + '</text>'
+            + '</svg>';
+    }
+
+    // =====================================================================
+    // 通知モーダル
+    // =====================================================================
+    function showNotify(msg) {
+        document.getElementById('notify-msg').textContent = msg;
+        document.getElementById('notify-modal').className = 'modal-overlay open';
+    }
+    function closeNotify() {
+        document.getElementById('notify-modal').className = 'modal-overlay';
+    }
+
+    // =====================================================================
+    // アプリ保存 & 公開URL管理
+    // =====================================================================
+
+    var gasBaseUrl = ''; // GASのベースURL（起動時に取得）
+
+    // サンプルモード: GAS不要
+    function loadDeployUrl() {}
+
+    function saveAppDef() {
+        showSampleNotice();
+    }
+
+    // サンプルプレビュー: localStorageに保存してsample_app.htmlを開く
+    function openPreview() {
+        openSamplePreview();
+    }
+
+    function openSamplePreview() {
+        try {
+            localStorage.setItem('sample_preview_appPages', JSON.stringify(appPages));
+            localStorage.setItem('sample_preview_mode', '1');
+        } catch(e) {}
+        window.open('sample_app.html', '_blank');
+    }
+
+    function saveAndPreview() {
+        showSampleNotice();
+    }
+
+    // =====================================================================
+    // サンプルモード通知
+    // =====================================================================
+    function showSampleNotice() {
+        showNotify('このサンプルでは保存できません。\n実際に使うには、スプレッドシートをコピーしてGASをデプロイしてください。');
+    }
+
+    // =====================================================================
+    // エスケープ
+    // =====================================================================
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escAttr(str) {
+        return String(str == null ? '' : str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // =====================================================================
+    // スマホプレビュー ズーム
+    // =====================================================================
+    function applyPreviewZoom(val) {
+        var frame = document.getElementById('phone-frame-el');
+        var label = document.getElementById('preview-zoom-label');
+        if (frame) frame.style.transform = 'scale(' + (val / 100) + ')';
+        if (label) label.textContent = val + '%';
+    }
+
+    // =====================================================================
+    // テンプレート
+    // =====================================================================
+    var TEMPLATES = [
+        {
+            id: 'blank',
+            name: '白紙',
+            icon: 'fa-solid fa-file',
+            color: '#94a3b8',
+            bg: '#f8faff',
+            border: '#d1d9f0',
+            desc: '何もない状態からオリジナルのアプリを作ります',
+            pages: {
+                'home': {
+                    name: 'ホーム画面',
+                    components: [
+                        { id: 'c_b1', type: 'header', text: 'マイアプリ', color: 'indigo', textColor: '#4f6ef7', fontSize: 16, bold: true, underline: false }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'exercise',
+            name: '運動記録アプリ',
+            icon: 'fa-solid fa-person-running',
+            color: '#10b981',
+            bg: '#f0fdf4',
+            border: '#bbf7d0',
+            desc: '毎日の運動時間を記録してグラフで確認。30分以上で合格判定！',
+            pages: {
+                'home': {
+                    name: 'ホーム画面',
+                    components: [
+                        { id: 'e_c1', type: 'header', text: '運動記録アプリ', color: 'emerald', textColor: '#10b981', fontSize: 16, bold: true, underline: false },
+                        { id: 'e_c2', type: 'text', text: '毎日の運動記録をつけて、グラフで確認しましょう！', color: 'slate', textColor: '#475569', fontSize: 12, bold: false, underline: false },
+                        { id: 'e_c3', type: 'chart', chartTitle: '運動時間グラフ', chartType: 'bar' },
+                        { id: 'e_c4', type: 'button', text: '今日の運動を記録する', actionType: 'navigate', actionTarget: 'input_page', color: 'emerald' },
+                        { id: 'e_c5', type: 'review', label: 'アプリの評価', reviewItems: ['役立ち度', '使いやすさ'] }
+                    ]
+                },
+                'input_page': {
+                    name: '記録入力',
+                    components: [
+                        { id: 'e_c6', type: 'header', text: '今日の運動を入力', color: 'emerald', textColor: '#10b981', fontSize: 14, bold: true, underline: false },
+                        { id: 'e_c8', type: 'input', placeholder: '運動時間（分）を入力', inputKey: 'value' },
+                        { id: 'e_c9', type: 'input', placeholder: '運動の種目（例: ウォーキング）', inputKey: 'memo' },
+                        { id: 'e_c10', type: 'button', text: '記録を保存する', actionType: 'saveRecord', color: 'emerald' },
+                        { id: 'e_c11', type: 'button', text: 'ホームに戻る', actionType: 'navigate', actionTarget: 'home', color: 'slate' }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'food',
+            name: '食事・栄養記録アプリ',
+            icon: 'fa-solid fa-apple-whole',
+            color: '#f59e0b',
+            bg: '#fffbeb',
+            border: '#fde68a',
+            desc: '毎日の食事内容や野菜摂取量を記録。栄養バランスを見える化します',
+            pages: {
+                'home': {
+                    name: 'ホーム画面',
+                    components: [
+                        { id: 'f_c1', type: 'header', text: '食事・栄養記録', color: 'indigo', textColor: '#f59e0b', fontSize: 16, bold: true, underline: false },
+                        { id: 'f_c2', type: 'text', text: '毎日の食事を記録して、栄養バランスを確認しましょう。', color: 'slate', textColor: '#475569', fontSize: 12, bold: false, underline: false },
+                        { id: 'f_c3', type: 'chart', chartTitle: '野菜摂取グラフ', chartType: 'bar' },
+                        { id: 'f_c4', type: 'button', text: '食事を記録する', actionType: 'navigate', actionTarget: 'input_page', color: 'indigo' },
+                        { id: 'f_c5', type: 'review', label: 'アプリの評価', reviewItems: ['役立ち度', '使いやすさ', '続けやすさ'] }
+                    ]
+                },
+                'input_page': {
+                    name: '食事入力',
+                    components: [
+                        { id: 'f_c6', type: 'header', text: '今日の食事を入力', color: 'indigo', textColor: '#f59e0b', fontSize: 14, bold: true, underline: false },
+                        { id: 'f_c8', type: 'input', placeholder: '野菜の量（g）を入力', inputKey: 'value' },
+                        { id: 'f_c9', type: 'input', placeholder: '食事の内容（例: サラダ、みそ汁）', inputKey: 'memo' },
+                        { id: 'f_c10', type: 'button', text: '記録を保存する', actionType: 'saveRecord', color: 'indigo' },
+                        { id: 'f_c11', type: 'button', text: 'ホームに戻る', actionType: 'navigate', actionTarget: 'home', color: 'slate' }
+                    ]
+                }
+            }
+        },
+        {
+            id: 'sleep',
+            name: '睡眠記録アプリ',
+            icon: 'fa-solid fa-moon',
+            color: '#8b5cf6',
+            bg: '#f5f0ff',
+            border: '#d8b4fe',
+            desc: '毎日の睡眠時間を記録してグラフで可視化。目標時間をクリアできてる？',
+            pages: {
+                'home': {
+                    name: 'ホーム画面',
+                    components: [
+                        { id: 's_c1', type: 'header', text: '睡眠記録アプリ', color: 'indigo', textColor: '#8b5cf6', fontSize: 16, bold: true, underline: false },
+                        { id: 's_c2', type: 'text', text: '毎日の睡眠時間を記録して、生活リズムを整えましょう！', color: 'slate', textColor: '#475569', fontSize: 12, bold: false, underline: false },
+                        { id: 's_c3', type: 'chart', chartTitle: '睡眠時間グラフ', chartType: 'line' },
+                        { id: 's_c4', type: 'button', text: '今日の睡眠を記録する', actionType: 'navigate', actionTarget: 'input_page', color: 'indigo' },
+                        { id: 's_c5', type: 'review', label: 'アプリの評価', reviewItems: ['役立ち度', '使いやすさ'] }
+                    ]
+                },
+                'input_page': {
+                    name: '睡眠入力',
+                    components: [
+                        { id: 's_c6', type: 'header', text: '今日の睡眠を入力', color: 'indigo', textColor: '#8b5cf6', fontSize: 14, bold: true, underline: false },
+                        { id: 's_c8', type: 'input', placeholder: '睡眠時間（時間）を入力', inputKey: 'value' },
+                        { id: 's_c9', type: 'input', placeholder: '気分・メモ（例: よく眠れた）', inputKey: 'memo' },
+                        { id: 's_c10', type: 'button', text: '記録を保存する', actionType: 'saveRecord', color: 'indigo' },
+                        { id: 's_c11', type: 'button', text: 'ホームに戻る', actionType: 'navigate', actionTarget: 'home', color: 'slate' }
+                    ]
+                }
+            }
+        }
+    ];
+
+    function openTemplateModal() {
+        var grid = document.getElementById('template-grid');
+        var html = '';
+        for (var i = 0; i < TEMPLATES.length; i++) {
+            var t = TEMPLATES[i];
+            html += '<div onclick="applyTemplate(\'' + t.id + '\')" style="border:2px solid ' + t.border + ';background:' + t.bg + ';border-radius:16px;padding:18px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.transform=\'scale(1.02)\'" onmouseout="this.style.transform=\'\'">'
+                + '<div style="font-size:24px;color:' + t.color + ';margin-bottom:8px;"><i class="' + t.icon + '"></i></div>'
+                + '<div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">' + esc(t.name) + '</div>'
+                + '<div style="font-size:11px;color:#64748b;line-height:1.6;">' + esc(t.desc) + '</div>'
+                + '</div>';
+        }
+        grid.innerHTML = html;
+        document.getElementById('template-modal').className = 'modal-overlay open';
+    }
+
+    function closeTemplateModal() {
+        document.getElementById('template-modal').className = 'modal-overlay';
+    }
+
+    function applyTemplate(templateId) {
+        var t = null;
+        for (var i = 0; i < TEMPLATES.length; i++) {
+            if (TEMPLATES[i].id === templateId) { t = TEMPLATES[i]; break; }
+        }
+        if (!t) return;
+        try {
+            appPages = JSON.parse(JSON.stringify(t.pages));
+        } catch(e) { appPages = t.pages; }
+        activePageId = Object.keys(appPages)[0];
+        selectedCompId = null;
+        document.getElementById('prop-section').className = 'prop-section';
+        closeTemplateModal();
+        renderEditor();
+    }
+
+    // =====================================================================
+    // 初期化
+    // =====================================================================
+
+    // 初期描画（デフォルトのサンプルアプリで一旦表示）
+    renderEditor();
+    // 初期ズーム適用
+    applyPreviewZoom(85);
+    // GASのURLを取得して「アプリを開く」ボタンを有効化
+    loadDeployUrl();
+    // 生徒番号があればスプレッドシートから保存済みデータを読み込む（非同期）
+    loadStudentData();
+    </script>
+</body>
+</html>
